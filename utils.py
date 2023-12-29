@@ -1,5 +1,8 @@
+import cv2
 
 
+def disp(img,WindowName):
+    cv2.imshow(WindowName,img)
 
 
 def data(file_path):
