@@ -34,30 +34,46 @@ def match(f1,f2):
     
     #low's ratio test
     ret=[]
+
+    idx1,idx2=[],[]
+
     pose=None
     for m,n in matches:
         if m.distance <0.75*n.distance:
+            
+
+            #around indices
+            idx1.append(m.queryIdx)
+            idx2.append(m.trainIdx)
+
             kp1=f1.pts[m.queryIdx]
             kp2=f2.pts[m.trainIdx]
             ret.append((kp1,kp2))
 
     assert len(ret)>=8
     ret=np.array(ret)
+
+    idx1=np.array(idx1)
+    idx2=np.array(idx2)
     
     ransac=RANSAC(ret,Transformation(),3,0.5,100)
-    model,inlier,error=ransac.solve()
+    model,inliers,error=ransac.solve()
 
     ret=np.array(ret)
 
-    ret=ret[inlier]
+    # ret=ret[inlier]
+    idx1=idx1[inliers]
+    idx2=idx2[inliers]
     pose=extractRt(model)
         
     
-    return ret,pose
+    return idx1,idx2,pose
 
 
 class Frame(object):
-    def __init__(self,img,depth):
+    def __init__(self,mapp,img,depth):
         self.pts,self.des=extract(img,depth)
         self.pose=IRt
+        self.id=len(mapp.frames)
+        mapp.frames.append(self)
 
