@@ -5,11 +5,20 @@ from ransac import *
 
 
 
-def projected_map(kps,depth):
-    for p in kps:
-        u,v=map(lambda x: int(round(x)),p.pt)
-        Z=depth[v,u]
-        # print(u,v,Z)
+def extractRt(model):
+    R=model.params['R']
+    t=model.params['t']
+    c=model.params['c']
+
+    pose=np.eye(4)
+    pose[:3,:3]=c*R
+    pose[:3,3]=t.reshape(3)
+
+    return pose 
+    
+
+
+
 
 class Extractor():
     def __init__(self):
@@ -27,6 +36,7 @@ class Extractor():
         matches=None
         #matching
         ret=[]
+        
         if self.last is not None:
             matches=self.bf.knnMatch(des,self.last['des'],k=2)
             for m,n in matches:
@@ -47,7 +57,7 @@ class Extractor():
                     ret.append((kp1,kp2))
 
         
-
+        pose=None
         if len(ret)>0:
         
             ransac=RANSAC(ret,Transformation(),3,0.5,100)
@@ -56,9 +66,10 @@ class Extractor():
             ret=np.array(ret)
 
             ret=ret[inlier]
+            pose=extractRt(model)
 
 
 
 
         self.last={'kps':kps,'des':des}
-        return ret
+        return ret,pose
