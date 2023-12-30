@@ -4,7 +4,6 @@ from transformation import *
 from ransac import *
 
 
-
 def extractRt(model):
     R=model.params['R']
     t=model.params['t']
@@ -16,60 +15,46 @@ def extractRt(model):
 
     return pose 
     
+def extract(img,depth):
+    
+    orb=cv2.ORB_create(100)
+    feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
+    kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
+    kps,des=orb.compute(img,kps)
+
+    return np.array([(kp.pt[0],kp.pt[1],
+                      depth[int(round(kp.pt[1])),int(round(kp.pt[0]))]) for kp in kps]),des
 
 
+def match(f1,f2):
+    bf=cv2.BFMatcher(cv2.NORM_HAMMING)
+    matches=bf.knnMatch(f1.des,f2.des,k=2)
+    
+    #low's ratio test
+    ret=[]
+    pose=None
+    for m,n in matches:
+        if m.distance <0.75*n.distance:
+            kp1=f1.pts[m.queryIdx]
+            kp2=f2.pts[m.trainIdx]
+            ret.append((kp1,kp2))
 
+    assert len(ret)>=8
+    ret=np.array(ret)
+    
+    ransac=RANSAC(ret,Transformation(),3,0.5,100)
+    model,inlier,error=ransac.solve()
 
-class Extractor():
-    def __init__(self):
-        self.orb=cv2.ORB_create(100)
-        self.bf=cv2.BFMatcher(cv2.NORM_HAMMING)
-        self.last=None
+    ret=np.array(ret)
 
-    def extract(self,img,depth):
-        #detection
-        feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
+    ret=ret[inlier]
+    pose=extractRt(model)
         
-        #extraction
-        kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
-        kps,des=self.orb.compute(img,kps)
-        matches=None
-        #matching
-        ret=[]
-        
-        if self.last is not None:
-            matches=self.bf.knnMatch(des,self.last['des'],k=2)
-            for m,n in matches:
-                if m.distance<0.75*n.distance:
-                    kp1=kps[m.queryIdx].pt
-
-                    #projected 2d point to 3d
-                    u1,v1=map(lambda x: int(round(x)),kp1)
-                    Z1=depth[v1,u1]
-                    kp1=(u1,v1,Z1)
+    
+    return ret,pose
 
 
-                    #projected 2d point to 3d
-                    kp2=self.last['kps'][m.trainIdx].pt
-                    u2,v2=map(lambda x: int(round(x)),kp2)
-                    Z2=depth[v2,u2]
-                    kp2=(u2,v2,Z2)
-                    ret.append((kp1,kp2))
+class Frame(object):
+    def __init__(self,img,depth):
+        self.pts,self.des=extract(img,depth)
 
-        
-        pose=None
-        if len(ret)>0:
-        
-            ransac=RANSAC(ret,Transformation(),3,0.5,100)
-            model,inlier,error=ransac.solve()
-
-            ret=np.array(ret)
-
-            ret=ret[inlier]
-            pose=extractRt(model)
-
-
-
-
-        self.last={'kps':kps,'des':des}
-        return ret,pose

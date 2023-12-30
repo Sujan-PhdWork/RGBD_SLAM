@@ -17,12 +17,10 @@ class RANSAC:
         i=0
         best_inlier=0
         best_params={}
-        # T=(1-self.eta)*self.pt1.shape[1]
-        # print(T)
+       
         while(i<self.iter):
 
-            #select random sample
-            # print(self.pt1.shape[1])
+        
 
             idxs=np.random.randint(0,self.kp1.shape[1],size=self.sample) 
                   
@@ -47,14 +45,10 @@ class RANSAC:
                 # print(np.sum(mask))  
                 best_params=self.model.params
                 best_inlier=mask
-            # if (np.sum(mask)>T):
-            #     break
-        
+            
                 
 
-            # print(inliers_pts1.size)
             i+=1
         self.model.params=best_params
         
         return self.model,best_inlier,np.sum(error)
-        # plt.show()
