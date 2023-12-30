@@ -1,4 +1,9 @@
 import cv2
+import numpy as np
+
+def add_ones(x):
+    return np.concatenate([x,np.ones((x.shape[0],1))],axis=1)
+
 
 
 def disp(img,WindowName):

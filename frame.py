@@ -3,6 +3,8 @@ import numpy as np
 from transformation import *
 from ransac import *
 
+IRt=np.eye(4)
+
 
 def extractRt(model):
     R=model.params['R']
@@ -57,4 +59,5 @@ def match(f1,f2):
 class Frame(object):
     def __init__(self,img,depth):
         self.pts,self.des=extract(img,depth)
+        self.pose=IRt
 
