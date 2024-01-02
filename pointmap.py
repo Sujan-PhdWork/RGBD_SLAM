@@ -9,12 +9,19 @@ class Map(object):
         self.frames=[]
         self.points=[]
         self.state=None
+        
+        
+    
+    
+    
+    def create_viewer(self):
+        
         self.q=Queue()
-
+    
         self.p=Process(target=self.viewer_thread,args=(self.q,))
         self.p.demon=True
         self.p.start()
-        
+    
     def viewer_thread(self,q):
         self.viewer_init(640,480)
         while not pangolin.ShouldQuit():
@@ -41,7 +48,7 @@ class Map(object):
         if self.state is None or not q.empty():
             self.state=q.get()
         
-        ppts=np.array([d[:3,3] for d in self.state[0]])
+        # ppts=np.array([d[:3,3] for d in self.state[0]])
         spts=np.array(self.state[1])
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -52,7 +59,7 @@ class Map(object):
 
         gl.glPointSize(10)
         gl.glColor3f(1.0, 0.0, 0.0)
-        pangolin.DrawPoints(ppts)
+        pangolin.DrawCameras(self.state[0])
 
         gl.glPointSize(2)
         gl.glColor3f(0.0, 1.0, 0.0)

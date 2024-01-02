@@ -19,7 +19,7 @@ def extractRt(model):
     
 def extract(img,depth):
     
-    orb=cv2.ORB_create(100)
+    orb=cv2.ORB_create(500)
     feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
     kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
     kps,des=orb.compute(img,kps)
@@ -56,7 +56,7 @@ def match(f1,f2):
     idx1=np.array(idx1)
     idx2=np.array(idx2)
     
-    ransac=RANSAC(ret,Transformation(),3,0.5,100)
+    ransac=RANSAC(ret,Transformation(),3,0.5,500)
     model,inliers,error=ransac.solve()
 
     ret=np.array(ret)

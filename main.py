@@ -3,13 +3,16 @@ import numpy as np
 from utils import *
 from frame import *
 import matplotlib.pyplot as plt
+
 import g2o
 from pointmap import Point,Map
+
+
 np.set_printoptions(suppress=True)
 # Process_flag=True
 
 mapp=Map()
-
+mapp.create_viewer()
 
 
 def process_img(img,depth):
@@ -38,7 +41,7 @@ def process_img(img,depth):
     # print(frames[-1].pts)
     pt4ds=add_ones(f1.pts[idx1])
     # print(pt4d.shape)
-    pt4ds=np.dot(f2.pose,pt4ds.T).T
+    pt4ds=np.dot(f1.pose,pt4ds.T).T[:3]
     # print(idx1)
     # print(pt4ds.shape)
 
@@ -61,18 +64,21 @@ def process_img(img,depth):
         cv2.line(img,(u1,v1),(u2,v2),color=(255,0,0))
     disp(img,"RGB")
 
+
+
     mapp.display()
 
 
 if __name__ == "__main__":
     
-    depth_paths='../rgbd_dataset_freiburg1_xyz/depth.txt'
+    dataset_path='../rgbd_dataset_freiburg2_rpy/'
+
+    depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
 
-    rgb_paths='../rgbd_dataset_freiburg1_xyz/rgb.txt'
+    rgb_paths=dataset_path+'rgb.txt'
     ilist=data(rgb_paths)
 
-    dataset_path='../rgbd_dataset_freiburg1_xyz/'
     
 
     for i in range(len(dlist)):
