@@ -3,6 +3,7 @@ import numpy as np
 from utils import *
 from frame import *
 import matplotlib.pyplot as plt
+import os
 
 import g2o
 from pointmap import Point,Map
@@ -12,7 +13,15 @@ np.set_printoptions(suppress=True)
 # Process_flag=True
 
 mapp=Map()
-mapp.create_viewer()
+
+if os.getenv("D3D") is not None :
+  mapp.create_viewer()
+
+disp_bool=False
+
+if os.getenv("D2D") is not None:
+  disp_bool = True
+
 
 
 def process_img(img,depth):
@@ -39,11 +48,14 @@ def process_img(img,depth):
     f1.pose=np.dot(pose,f2.pose)
 
     # print(frames[-1].pts)
-    pt4ds=add_ones(f1.pts[idx1])
+    pt4ds=add_ones(f1.kps[idx1])
     # print(pt4d.shape)
-    pt4ds=np.dot(f1.pose,pt4ds.T).T[:3]
+    pt4ds=np.dot(f2.pose,pt4ds.T).T[:3]
     # print(idx1)
     # print(pt4ds.shape)
+
+    unmatched_points = np.array([f1.pts[i] is None for i in idx1]).astype(np.bool_)
+
 
     for i,p in enumerate(pt4ds):
         pt=Point(mapp,p)
@@ -56,21 +68,23 @@ def process_img(img,depth):
 
     # print(frames[-1].pose)
 
-    for kp1,kp2 in zip(f1.pts[idx1],f2.pts[idx2]):
+    for kp1,kp2 in zip(f1.kps[idx1],f2.kps[idx2]):
         u1,v1,_=map(lambda x: int(round(x)),kp1)
         u2,v2,_=map(lambda x: int(round(x)),kp2)
 
         cv2.circle(img,(u1,v1),color=(0,255,0),radius=3)
         cv2.line(img,(u1,v1),(u2,v2),color=(255,0,0))
-    disp(img,"RGB")
-
-
+    
+    if disp_bool:
+        disp(img,"RGB")
+        disp(depth,"Depth")
 
     mapp.display()
 
 
 if __name__ == "__main__":
-    
+
+
     dataset_path='../rgbd_dataset_freiburg2_rpy/'
 
     depth_paths=dataset_path+'depth.txt'
@@ -90,13 +104,13 @@ if __name__ == "__main__":
 
         process_img(frame,depth)
         # print(frame)
+        
+        if mapp.q is None :
+            break
 
         if frame is None:
             print("End of frame")
             break
-
-        
-        disp(depth,"Depth")
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

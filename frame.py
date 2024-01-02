@@ -20,7 +20,7 @@ def extractRt(model):
 def extract(img,depth):
     
     orb=cv2.ORB_create(500)
-    feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
+    feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=10)
     kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
     kps,des=orb.compute(img,kps)
 
@@ -46,8 +46,8 @@ def match(f1,f2):
             idx1.append(m.queryIdx)
             idx2.append(m.trainIdx)
 
-            kp1=f1.pts[m.queryIdx]
-            kp2=f2.pts[m.trainIdx]
+            kp1=f1.kps[m.queryIdx]
+            kp2=f2.kps[m.trainIdx]
             ret.append((kp1,kp2))
 
     assert len(ret)>=8
@@ -72,7 +72,8 @@ def match(f1,f2):
 
 class Frame(object):
     def __init__(self,mapp,img,depth):
-        self.pts,self.des=extract(img,depth)
+        self.kps,self.des=extract(img,depth)
+        self.pts=[None]*len(self.kps)
         self.pose=IRt
         self.id=len(mapp.frames)
         mapp.frames.append(self)

@@ -9,6 +9,7 @@ class Map(object):
         self.frames=[]
         self.points=[]
         self.state=None
+        self.q=None
         
         
     
@@ -83,6 +84,7 @@ class Map(object):
 class Point(object):
     # apoint is a 3D point in the world
     #each Point is observed in multiple frame
+    
     def __init__(self,mapp,loc):
         self.pt=loc #state vector
         self.frames=[]
@@ -92,5 +94,6 @@ class Point(object):
         mapp.points.append(self)
 
     def add_observation(self,frame,idx):
+        frame.pts[idx]=self
         self.frames.append(frame)
         self.idxs.append(idx)
