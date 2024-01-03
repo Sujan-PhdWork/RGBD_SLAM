@@ -47,23 +47,30 @@ def process_img(img,depth):
     
     f1.pose=np.dot(pose,f2.pose)
 
+    
+    for i,idx in enumerate(idx2):
+        if f2.pts[idx] is not None:
+            f2.pts[idx].add_observation(f1,idx1[i])
+
+    
     # print(frames[-1].pts)
     pt4ds=add_ones(f1.kps[idx1])
     # print(pt4d.shape)
     # print(pt4ds)
-    pt4ds=np.dot(np.eye(4),pt4ds.T).T[:,:3]
-    # pt4ds/=pt4ds[:,3:]
+    pt4ds=np.dot(f1.pose,pt4ds.T).T
+    pt4ds/=pt4ds[:,3:]
 
     # print(idx1)
     # print(pt4ds.shape)
 
     
-    # unmatched_points = np.array([f1.pts[i] is None for i in idx1]).astype(np.bool_)
+    unmatched_points = np.array([f1.pts[i] is None for i in idx1]).astype(np.bool_)
     # # good_pts4d=np.abs(pt4ds[:,2])>0 & unmatched_points
+    good_pts4d = (np.abs(pt4ds[:, 3]) > 0.005) & (pt4ds[:, 2] > 0) & unmatched_points
 
     for i,p in enumerate(pt4ds):
-        # if not good_pts4d[i]:
-        #     continue
+        if not good_pts4d[i]:
+             continue
         # parint("hello")
         pt=Point(mapp,p)
         pt.add_observation(f1,idx1[i])
@@ -95,7 +102,7 @@ def process_img(img,depth):
 if __name__ == "__main__":
 
 
-    dataset_path='../rgbd_dataset_freiburg2_rpy/'
+    dataset_path='../rgbd_dataset_freiburg1_xyz/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)

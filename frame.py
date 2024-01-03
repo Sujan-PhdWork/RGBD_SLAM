@@ -25,7 +25,7 @@ def extract(img,depth):
     kps,des=orb.compute(img,kps)
 
     return np.array([(kp.pt[0],kp.pt[1],
-                      depth[int(round(kp.pt[1])),int(round(kp.pt[0]))]) for kp in kps]),des
+                      depth[round(kp.pt[1]),round(kp.pt[0])]) for kp in kps]),des
 
 
 def match(f1,f2):

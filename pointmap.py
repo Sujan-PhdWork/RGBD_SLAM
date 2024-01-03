@@ -15,58 +15,72 @@ class Map(object):
     
    #optimizer
     def optimize(self):
-        optimizer = g2o.SparseOptimizer()
-        solver = g2o.BlockSolverX(g2o.LinearSolverDenseX())
-        algorithm = g2o.OptimizationAlgorithmLevenberg(solver)
-        optimizer.set_algorithm(algorithm)
+        opt=g2o.SparseOptimizer()
+        solver = g2o.BlockSolverSE3(g2o.LinearSolverCholmodSE3())
+        solver = g2o.OptimizationAlgorithmLevenberg(solver)
+        opt.set_algorithm(solver)
 
 
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
 
+       
         for f in self.frames:
             
-            cam = g2o.Isometry3d(f.pose[:3,:3], f.pose[:3,3])
-            
+            pose=f.pose
+            sbacam=g2o.SBACam(g2o.SE3Quat(pose[0:3,0:3],pose[0:3,3]))
+            # sbacam.set_cam(f.K[0][0], f.K[1][1], f.K[0][2], f.K[1][2], 1.0)
+            sbacam.set_cam(1.0, 1.0, 0.0, 0.0, 1.0)
 
-            vc = g2o.VertexSE3()
-            vc.set_id(f.id)
-            vc.set_estimate(cam)
-            vc.set_fixed(f.id==0)
-            optimizer.add_vertex(vc)   
+            v_se3=g2o.VertexCam()
+            v_se3.set_id(f.id)
+            v_se3.set_estimate(sbacam)
+            v_se3.set_fixed(f.id==0)
+            opt.add_vertex(v_se3)
 
+        PT_ID_OFFSET=0x10000
         for p in self.points:
 
-            f1,f2=p.frames
-            
-            #inverse transformation
-            trans0 = optimizer.vertex(f1.id).estimate().inverse()
-            trans1 = optimizer.vertex(f2.id).estimate().inverse()
+            pt = g2o.VertexSBAPointXYZ()
+            pt.set_id(p.id+PT_ID_OFFSET)
+            pt.set_estimate(p.pt[0:3])
+            pt.set_marginalized(True)
+            pt.set_fixed(False)
+            opt.add_vertex(pt)
 
-            
-            pt0 = trans0 * p.pt
-            pt1 = trans1 * p.pt
+            for f in p.frames:
+                edge = g2o.EdgeProjectP2MC()
+                edge.set_vertex(0, pt)
+                edge.set_vertex(1, opt.vertex(f.id))
+                
+                #This needs to be check
+                uv=f.kps[f.pts.index(p)][:2]
+                # print(uv)
+                edge.set_measurement(uv)   # projection
+                edge.set_information(np.eye(2))
+                edge.set_robust_kernel(robust_kernel)
+                opt.add_edge(edge)
 
-            meas = g2o.EdgeGICP()
-            meas.pos0 = pt0
-            meas.pos1 = pt1
 
-            edge = g2o.Edge_V_V_GICP()
-            edge.set_vertex(0, optimizer.vertex(f1.id))
-            edge.set_vertex(1, optimizer.vertex(f2.id))
-            edge.set_measurement(meas)
-            edge.set_information(meas.prec0(0.01))
-
-            optimizer.add_edge(edge)
 
         
-        optimizer.initialize_optimization()
-        optimizer.compute_active_errors()
-        print('Initial chi2 =', optimizer.chi2())
+        opt.set_verbose(True)
+        opt.initialize_optimization()
+        opt.optimize(20)
 
         #optimizer.save('gicp.g2o')
 
-        optimizer.set_verbose(True)
-        optimizer.optimize(10)
+        for f in self.frames:
+            est = opt.vertex(f.id).estimate()
+            R = est.rotation().matrix()
+            t = est.translation()
+            ret=np.eye(4)
+            ret[:3,:3]=R
+            ret[:3,3]=t
+            f.pose = ret.copy()
+
+        for p in self.points:
+            est=opt.vertex(p.id+ PT_ID_OFFSET).estimate()
+            p.pt=np.array(est)
 
 
 
