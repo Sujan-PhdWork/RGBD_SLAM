@@ -2,7 +2,7 @@ import numpy as np
 import pangolin
 import OpenGL.GL as gl
 from multiprocessing import Process, Queue
-
+import g2o
 
 class Map(object):
     def __init__(self):
@@ -13,7 +13,64 @@ class Map(object):
         
         
     
-    
+   #optimizer
+    def optimize(self):
+        optimizer = g2o.SparseOptimizer()
+        solver = g2o.BlockSolverX(g2o.LinearSolverDenseX())
+        algorithm = g2o.OptimizationAlgorithmLevenberg(solver)
+        optimizer.set_algorithm(algorithm)
+
+
+        robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
+
+        for f in self.frames:
+            
+            cam = g2o.Isometry3d(f.pose[:3,:3], f.pose[:3,3])
+            
+
+            vc = g2o.VertexSE3()
+            vc.set_id(f.id)
+            vc.set_estimate(cam)
+            vc.set_fixed(f.id==0)
+            optimizer.add_vertex(vc)   
+
+        for p in self.points:
+
+            f1,f2=p.frames
+            
+            #inverse transformation
+            trans0 = optimizer.vertex(f1.id).estimate().inverse()
+            trans1 = optimizer.vertex(f2.id).estimate().inverse()
+
+            
+            pt0 = trans0 * p.pt
+            pt1 = trans1 * p.pt
+
+            meas = g2o.EdgeGICP()
+            meas.pos0 = pt0
+            meas.pos1 = pt1
+
+            edge = g2o.Edge_V_V_GICP()
+            edge.set_vertex(0, optimizer.vertex(f1.id))
+            edge.set_vertex(1, optimizer.vertex(f2.id))
+            edge.set_measurement(meas)
+            edge.set_information(meas.prec0(0.01))
+
+            optimizer.add_edge(edge)
+
+        
+        optimizer.initialize_optimization()
+        optimizer.compute_active_errors()
+        print('Initial chi2 =', optimizer.chi2())
+
+        #optimizer.save('gicp.g2o')
+
+        optimizer.set_verbose(True)
+        optimizer.optimize(10)
+
+
+
+
     
     def create_viewer(self):
         
@@ -66,6 +123,7 @@ class Map(object):
         gl.glColor3f(0.0, 1.0, 0.0)
         # spts=np.array(self.state[1])
 
+        # print("hello",spts.shape)
         pangolin.DrawPoints(spts)
         
         pangolin.FinishFrame()

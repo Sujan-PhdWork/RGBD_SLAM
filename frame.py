@@ -77,4 +77,5 @@ class Frame(object):
         self.pose=IRt
         self.id=len(mapp.frames)
         mapp.frames.append(self)
+        self.K=np.eye(3)
 

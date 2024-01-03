@@ -50,14 +50,21 @@ def process_img(img,depth):
     # print(frames[-1].pts)
     pt4ds=add_ones(f1.kps[idx1])
     # print(pt4d.shape)
-    pt4ds=np.dot(f2.pose,pt4ds.T).T[:3]
+    # print(pt4ds)
+    pt4ds=np.dot(np.eye(4),pt4ds.T).T[:,:3]
+    # pt4ds/=pt4ds[:,3:]
+
     # print(idx1)
     # print(pt4ds.shape)
 
-    unmatched_points = np.array([f1.pts[i] is None for i in idx1]).astype(np.bool_)
-
+    
+    # unmatched_points = np.array([f1.pts[i] is None for i in idx1]).astype(np.bool_)
+    # # good_pts4d=np.abs(pt4ds[:,2])>0 & unmatched_points
 
     for i,p in enumerate(pt4ds):
+        # if not good_pts4d[i]:
+        #     continue
+        # parint("hello")
         pt=Point(mapp,p)
         pt.add_observation(f1,idx1[i])
         pt.add_observation(f2,idx2[i])
@@ -79,6 +86,9 @@ def process_img(img,depth):
         disp(img,"RGB")
         disp(depth,"Depth")
 
+    if frame.id >= 4:
+        mapp.optimize()
+    
     mapp.display()
 
 
