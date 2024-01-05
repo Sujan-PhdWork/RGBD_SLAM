@@ -11,6 +11,8 @@ np.set_printoptions(suppress=True)
 
 W,H=640,480
 K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
+# K=np.array([[1,0,0],[0,1,0],[0,0,1]])
+
 
 mapp=Map()
 
@@ -47,14 +49,14 @@ def process_img(img,depth):
     # print(f_c.pose)
 
     pts4d=add_ones(f_c.kps[idx2])
-    pts4d=np.dot(f_p.pose,pts4d.T).T
+    pts4d=np.dot(f_c.pose,pts4d.T).T
 
     for i, pt in enumerate(pts4d):
         pt=Point(mapp,pt)
         pt.add_observation(f_p,idx1[i])
         pt.add_observation(f_c,idx2[i])
     
-    print()
+    # print(mapp.points[0].pt)
 
 
     for kp1,kp2 in zip(f_p.kps[idx1],f_c.kps[idx2]):
@@ -70,32 +72,32 @@ def process_img(img,depth):
 
 if __name__ == "__main__":
     
-    depth_paths='../dataset/rgbd_dataset_freiburg1_xyz/depth.txt'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+
+    depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
 
-    rgb_paths='../dataset/rgbd_dataset_freiburg1_xyz/rgb.txt'
+    rgb_paths=dataset_path+'rgb.txt'
     ilist=data(rgb_paths)
 
-    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
-    
+
 
     for i in range(len(dlist)):
 
         frame=cv2.imread(dataset_path+ilist[i])
         depth=cv2.imread(dataset_path+dlist[i],0)
         # print(frame.shape,depth.shape)
-        W=frame.shape[1]
-        H=frame.shape[0]
-        # print(W,H)
+
+
         process_img(frame,depth)
         # print(frame)
+        
+        if mapp.q is None :
+            break
 
         if frame is None:
             print("End of frame")
             break
-
-        
-        disp(depth,"Depth")
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
