@@ -89,6 +89,8 @@ class Frame(object):
         self.kps[:,:2]=normalize(self.kps[:,:2],self.Kinv)
         #kps is 3d  normalize point 
 
+        self.pts=[None]*len(self.kps)
+
         self.pose=IRt
         self.id=len(mapp.frames)
         mapp.frames.append(self)

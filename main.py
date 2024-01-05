@@ -54,10 +54,20 @@ def process_img(img,depth):
     f_c.pose=np.dot(pose,f_p.pose)
     # print(f_c.pose)
 
+
+
     pts4d=add_ones(f_c.kps[idx2])
     pts4d=np.dot(f_p.pose,pts4d.T).T
+    
 
+    unmatched_points=np.array([f_p.pts[i] is None for i in idx1])
+    #This ensure the point dont has any corospondenc
+    
+    good_pts4d = (pts4d[:, 2] > 0) & unmatched_points
+    
     for i, pt in enumerate(pts4d):
+        if not good_pts4d[i]:
+            continue
         pt=Point(mapp,pt)
         pt.add_observation(f_p,idx1[i])
         pt.add_observation(f_c,idx2[i])
