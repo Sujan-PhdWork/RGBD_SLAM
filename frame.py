@@ -63,7 +63,7 @@ def match(f1,f2):
     # ret[:,0,:2]=normalize(ret[:,0,:2],f1.Kinv)
     # ret[:,1,:2]=normalize(ret[:,1,:2],f2.Kinv)
     
-    ransac=RANSAC(ret,Transformation(),3,3,500)
+    ransac=RANSAC(ret,Transformation(),2,3,100)
     model,inliers,error=ransac.solve()
 
     idx1=idx1[inliers]

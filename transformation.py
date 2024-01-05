@@ -1,5 +1,8 @@
 import numpy as np
 
+eps=1e-09
+
+
 def transformation(kp1,kp2):
     
     
@@ -41,10 +44,10 @@ def transformation(kp1,kp2):
     #     
 
     R=np.dot(U,np.dot(S,VT))
-    c=(1/var_x)*(np.trace(D*S))
+    c=(1/(var_x+eps))*(np.trace(D*S))
     t=muy-c*np.dot(R,mux)
     
-    error=var_y-((np.trace(D*S))**2)/var_x
+    error=var_y-((np.trace(D*S))**2)/(var_x+eps)
 
     params={"R": R,"t":t,"c":c}
     return (params,error)

@@ -12,7 +12,12 @@ np.set_printoptions(suppress=True)
 W,H=640,480
 K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
 # K=np.array([[1,0,0],[0,1,0],[0,0,1]])
+th=0
 
+Int_pose=np.array([[1,0,0,0],
+                   [0,np.cos(th),-np.sin(th),0],
+                   [0,np.sin(th),np.cos(th),0],
+                   [0,0,0,1]])
 
 mapp=Map()
 
@@ -24,6 +29,7 @@ def process_img(img,depth):
 
 
     if (frame.id)==0:
+        frame.pose=Int_pose
         return
     f_c=mapp.frames[-1] #current frame
     f_p=mapp.frames[-2] # previous frame
@@ -49,7 +55,7 @@ def process_img(img,depth):
     # print(f_c.pose)
 
     pts4d=add_ones(f_c.kps[idx2])
-    pts4d=np.dot(f_c.pose,pts4d.T).T
+    pts4d=np.dot(f_p.pose,pts4d.T).T
 
     for i, pt in enumerate(pts4d):
         pt=Point(mapp,pt)
@@ -72,7 +78,7 @@ def process_img(img,depth):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
@@ -99,7 +105,7 @@ if __name__ == "__main__":
             print("End of frame")
             break
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(100) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
 
