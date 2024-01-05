@@ -5,6 +5,8 @@ from ransac import *
 from utils import normalize
 
 
+IRt=np.eye(4)
+
 def extractRt(model):
     R=model.params['R']
     t=model.params['t']
@@ -62,3 +64,4 @@ class Frame(object):
         self.pts,self.des=extract(img,depth)
         self.K=K
         self.Kinv=np.linalg.inv(K)
+        self.pose=IRt
