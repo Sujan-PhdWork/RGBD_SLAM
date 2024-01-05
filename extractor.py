@@ -5,17 +5,24 @@ from ransac import *
 
 
 
-def projected_map(kps,depth):
-    for p in kps:
-        u,v=map(lambda x: int(round(x)),p.pt)
-        Z=depth[v,u]
-        # print(u,v,Z)
+def add_ones(x):
+    return np.concatenate([x,np.ones((x.shape[0],1))],axis=1)
+
 
 class Extractor():
-    def __init__(self):
+    def __init__(self,K):
         self.orb=cv2.ORB_create(100)
         self.bf=cv2.BFMatcher(cv2.NORM_HAMMING)
         self.last=None
+        self.K=K
+        self.Kinv=np.linalg.inv(self.K)
+
+    def normalize(self,pts):
+        return np.dot(self.Kinv,add_ones(pts).T).T[:,0:2]
+    
+    def denormalize(self,pt):
+        ret=np.dot(self.K,np.array([pt[0],pt[1],1.0]))
+        return int(round(ret[0])),int(round(ret[1])),pt[2]
 
     def extract(self,img,depth):
         #detection
@@ -49,11 +56,14 @@ class Extractor():
         
 
         if len(ret)>0:
-        
-            ransac=RANSAC(ret,Transformation(),3,0.5,100)
+            ret=np.array(ret)
+            ret[:,0,:2]=self.normalize(ret[:,0,:2])
+            ret[:,1,:2]=self.normalize(ret[:,1,:2])
+
+            ransac=RANSAC(ret,Transformation(),3,3,500)
             model,inlier,error=ransac.solve()
 
-            ret=np.array(ret)
+            # ret=np.array(ret)
 
             ret=ret[inlier]
 
