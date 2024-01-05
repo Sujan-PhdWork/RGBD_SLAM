@@ -36,32 +36,60 @@ def match(f1,f2):
     
     #low's ratio test
     ret=[]
+    idx1,idx2=[],[]
     pose=None
+
     for m,n in matches:
         if m.distance <0.75*n.distance:
-            kp1=f1.pts[m.queryIdx]
-            kp2=f2.pts[m.trainIdx]
+
+            idx1.append(m.queryIdx)
+            idx2.append(m.trainIdx)
+
+            # idx1-> id of the keypoint in previous frame
+            # idx2-> id of the keypoint in current frame
+
+            kp1=f1.kps[m.queryIdx]
+            kp2=f2.kps[m.trainIdx]
+
+            # kp1[idx]-> the keypoint in previous frame with id =idx            
             ret.append((kp1,kp2))
 
     assert len(ret)>=3
     ret=np.array(ret)
 
-    ret[:,0,:2]=normalize(ret[:,0,:2],f1.Kinv)
-    ret[:,1,:2]=normalize(ret[:,1,:2],f2.Kinv)
+    idx1=np.array(idx1)
+    idx2=np.array(idx2)
+
+    # ret[:,0,:2]=normalize(ret[:,0,:2],f1.Kinv)
+    # ret[:,1,:2]=normalize(ret[:,1,:2],f2.Kinv)
     
     ransac=RANSAC(ret,Transformation(),3,3,500)
-    model,inlier,error=ransac.solve()
+    model,inliers,error=ransac.solve()
 
-    ret=np.array(ret)
+    idx1=idx1[inliers]
+    idx2=idx2[inliers]
 
-    ret=ret[inlier]
     pose=extractRt(model)
 
-    return ret,pose   
+    return idx1,idx2,pose   
 
 class Frame(object):
-    def __init__(self,img,depth,K):
-        self.pts,self.des=extract(img,depth)
+    def __init__(self,mapp,img,depth,K):
+        
+        
+        pts,self.des=extract(img,depth)
+
+        #pts is 3d points unlormalize point
+
         self.K=K
         self.Kinv=np.linalg.inv(K)
+
+        self.kps=pts.copy()
+
+        self.kps[:,:2]=normalize(self.kps[:,:2],self.Kinv)
+        #kps is 3d  normalize point 
+
         self.pose=IRt
+        self.id=len(mapp.frames)
+        mapp.frames.append(self)
+
