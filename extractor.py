@@ -4,6 +4,17 @@ from transformation import *
 from ransac import *
 
 
+def extractRt(model):
+    R=model.params['R']
+    t=model.params['t']
+    c=model.params['c']
+
+    pose=np.eye(4)
+    pose[:3,:3]=c*R
+    pose[:3,3]=t.reshape(3)
+
+    return pose
+
 
 def add_ones(x):
     return np.concatenate([x,np.ones((x.shape[0],1))],axis=1)
@@ -54,7 +65,7 @@ class Extractor():
                     ret.append((kp1,kp2))
 
         
-
+        pose=None
         if len(ret)>0:
             ret=np.array(ret)
             ret[:,0,:2]=self.normalize(ret[:,0,:2])
@@ -66,9 +77,12 @@ class Extractor():
             # ret=np.array(ret)
 
             ret=ret[inlier]
+            pose=extractRt(model)
+
+
 
 
 
 
         self.last={'kps':kps,'des':des}
-        return ret
+        return ret,pose
