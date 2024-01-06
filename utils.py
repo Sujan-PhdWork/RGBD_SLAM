@@ -46,3 +46,30 @@ def data(file_path):
 
 
 
+
+def data_trajectory(file_path):
+
+    state_list=[]
+
+    # Specify the file path
+    # file_path = '../rgbd_dataset_freiburg1_xyz/depth.txt'
+
+    try:
+        # Open the file in read mode
+        with open(file_path, 'r') as file:
+
+            for line in file:
+
+                if not line.startswith('#'):
+                    words=line.split()
+                    state=[float(s) for s in words[1:]]
+                    state_list.append(state)
+    except FileNotFoundError:
+        print(f"Error: File '{file_path}' not found.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    
+    return (state_list)
+

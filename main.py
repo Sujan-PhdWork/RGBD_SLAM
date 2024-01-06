@@ -14,12 +14,23 @@ K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
 # K=np.array([[1,0,0],[0,1,0],[0,0,1]])
 th=0
 
-Int_pose=np.array([[1,0,0,0],
-                   [0,np.cos(th),-np.sin(th),0],
-                   [0,np.sin(th),np.cos(th),0],
-                   [0,0,0,1]])
+
+# #freiburg1_xyz
+# Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
+#                    [-0.8837,-0.0287,-0.4672,0.6305],
+#                    [-0.0692,0.9952,0.0698,1.6380],
+#                    [0,0,0,1]])
+
+
+#freiburg1_floor
+Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
+                    [-0.7960,    0.4055,   -0.4493,   -0.9763],
+                    [-0.0001,    0.7423,    0.6701,    0.6837],
+                    [      0,         0,         0,    1.0000]])
+
 
 mapp=Map()
+mapp.create_viewer()
 
 
 
@@ -51,16 +62,18 @@ def process_img(img,depth):
     
 
 
+    for i,idx in enumerate(idx1):
+        if f_p.pts[idx] is not None:
+            f_p.pts[idx].add_observation(f_c,idx2[i])
+
     f_c.pose=np.dot(pose,f_p.pose)
     # print(f_c.pose)
 
-
-
     pts4d=add_ones(f_c.kps[idx2])
-    pts4d=np.dot(f_p.pose,pts4d.T).T
+    pts4d=np.dot(f_c.pose,pts4d.T).T
     
 
-    unmatched_points=np.array([f_p.pts[i] is None for i in idx1])
+    unmatched_points=np.array([f_c.pts[i] is None for i in idx2])
     #This ensure the point dont has any corospondenc
     
     good_pts4d = (pts4d[:, 2] > 0) & unmatched_points
@@ -83,6 +96,9 @@ def process_img(img,depth):
         cv2.circle(img,(u_p,v_p),color=(0,255,0),radius=3)
         cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
     disp(img,"RGB")
+
+    if frame.id >= 4:
+        mapp.optimize()
     mapp.display()
 
 
@@ -115,7 +131,7 @@ if __name__ == "__main__":
             print("End of frame")
             break
         
-        if cv2.waitKey(100) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
 
