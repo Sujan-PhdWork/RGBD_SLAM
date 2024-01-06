@@ -90,6 +90,7 @@ class Frame(object):
         #kps is 3d  normalize point 
 
         self.pose=IRt
+        self.Rpose=IRt
         self.pts=[]
         self.id=len(mapp.frames)
         mapp.frames.append(self)

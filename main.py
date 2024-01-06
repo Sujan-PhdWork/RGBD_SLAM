@@ -2,9 +2,9 @@
 import cv2
 import numpy as np
 from utils import *
-from frame import extract,match,Frame
+from frame import match,Frame
 # import g2o
-from pointmap import Point,Map
+from pointmap import Map
 from gicp import gicp
 
 
@@ -13,16 +13,33 @@ np.set_printoptions(suppress=True)
 W,H=640,480
 K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
 
+# #freiburg1_xyz
+# Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
+#                    [-0.8837,-0.0287,-0.4672,0.6305],
+#                    [-0.0692,0.9952,0.0698,1.6380],
+#                    [0,0,0,1]])
+
+
+#freiburg1_floor
+Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
+                    [-0.7960,    0.4055,   -0.4493,   -0.9763],
+                    [-0.0001,    0.7423,    0.6701,    0.6837],
+                    [      0,         0,         0,    1.0000]])
+
+
+
 mapp=Map()
 
 
 
 def process_img(img,depth):
-
+    
     frame=Frame(mapp,img,depth,K)
 
 
     if (frame.id)==0:
+        frame.pose=Int_pose
+
         return
     f_c=mapp.frames[-1] #current frame
     f_p=mapp.frames[-2] # previous frame
@@ -61,16 +78,16 @@ def process_img(img,depth):
     f_c.pts=pts3d2
     
     T_pose=gicp(mapp)
+    f_c.Rpose=np.dot(T_pose,f_p.Rpose) 
 
     # relative orientaion from point of second frame 
     #with respect to first frame
 
-    
-    print("pose")
-    print(pose)
-
-    print("point_pose")
-    print(T_pose)
+    # print("pose")
+    # print(f_c.pose[:3,3])
+    # R_pose=np.dot(T_pose,R_pose)
+    # print("point_pose")
+    # print(R_pose[:3,3])
 
 
 
@@ -83,7 +100,7 @@ def process_img(img,depth):
         cv2.circle(img,(u_p,v_p),color=(0,255,0),radius=3)
         cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
     disp(img,"RGB")
-    # mapp.display()
+    mapp.display()
 
 
 if __name__ == "__main__":
