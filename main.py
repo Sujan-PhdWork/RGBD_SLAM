@@ -5,6 +5,7 @@ from utils import *
 from frame import extract,match,Frame
 # import g2o
 from pointmap import Point,Map
+from gicp import gicp
 
 
 np.set_printoptions(suppress=True)
@@ -43,18 +44,35 @@ def process_img(img,depth):
     
 
 
-    f_c.pose=np.dot(pose,f_p.pose)
+    f_c.pose=np.dot(pose,f_p.pose) 
+    
+    # relative orientaion from pose of second frame 
+    #with respect to first frame
+    
+    
     # print(f_c.pose)
 
-    pts4d=add_ones(f_c.kps[idx2])
-    pts4d=np.dot(f_p.pose,pts4d.T).T
 
-    for i, pt in enumerate(pts4d):
-        pt=Point(mapp,pt)
-        pt.add_observation(f_p,idx1[i])
-        pt.add_observation(f_c,idx2[i])
+
+    pts3d1=f_p.kps[idx1] # points on previous frame
+    pts3d2=f_c.kps[idx2] # points on current frame
+
+    f_p.pts=pts3d1
+    f_c.pts=pts3d2
     
-    print()
+    T_pose=gicp(mapp)
+
+    # relative orientaion from point of second frame 
+    #with respect to first frame
+
+    
+    print("pose")
+    print(pose)
+
+    print("point_pose")
+    print(T_pose)
+
+
 
 
     for kp1,kp2 in zip(f_p.kps[idx1],f_c.kps[idx2]):
@@ -65,7 +83,7 @@ def process_img(img,depth):
         cv2.circle(img,(u_p,v_p),color=(0,255,0),radius=3)
         cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
     disp(img,"RGB")
-    mapp.display()
+    # mapp.display()
 
 
 if __name__ == "__main__":

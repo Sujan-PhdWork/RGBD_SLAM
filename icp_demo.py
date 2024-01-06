@@ -23,10 +23,10 @@ def main():
         np.random.random((1000, 1)) - 0.5,
         np.random.random((1000, 1)) + 10])
 
-    
+
 
     for i in range(3):
-        t = np.array([0, 0, i])
+        t = np.array([0, 0, 2*i+30])
         cam = g2o.Isometry3d(np.identity(3), t)
         # print(cam(0,0))
         vc = g2o.VertexSE3()
@@ -87,9 +87,9 @@ def main():
     # optimizer.save('gicp.g2o')
 
     optimizer.set_verbose(False)
-    optimizer.optimize(5)
+    optimizer.optimize(10)
 
-    print('\nSecond vertex should be near [0, 0, 1]')
+    print('\nSecond vertex should be near [0, 0, 32]')
     print('before optimization:', cam.t)
     print('after  optimization:', optimizer.vertex(1).estimate().t)
 
