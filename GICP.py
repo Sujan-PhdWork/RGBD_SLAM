@@ -1,7 +1,7 @@
 import numpy as np
 import g2o
 
-def gicp(mapp,verbose=False):
+def GICP(mapp,verbose=False):
     
 
     opt = g2o.SparseOptimizer()
