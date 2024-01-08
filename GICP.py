@@ -1,14 +1,14 @@
 import numpy as np
 import g2o
 
-def GICP(mapp,verbose=False):
+def GICP(mapp,id1,id2,verbose=False):
     
 
     opt = g2o.SparseOptimizer()
     solver = g2o.BlockSolverX(g2o.LinearSolverDenseX())
     algorithm = g2o.OptimizationAlgorithmLevenberg(solver)
     opt.set_algorithm(algorithm)
-    f1,f2=mapp.frames[-2],mapp.frames[-1]
+    f1,f2=mapp.frames[id1],mapp.frames[id2]
 
     f_list=[f1,f2]
 

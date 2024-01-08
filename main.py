@@ -4,7 +4,7 @@ import numpy as np
 from utils import *
 from frame import match,Frame
 # import g2o
-from pointmap import Map
+from pointmap import Map,EDGE
 from GICP import GICP
 
 
@@ -71,8 +71,15 @@ def process_img(img,depth):
     f_c.pts=f_c.kps[idx2] # points on current frame
 
     
-    T_pose=GICP(mapp)
-    f_c.Rpose=np.dot(T_pose,f_p.Rpose) 
+    T_pose=GICP(mapp,f_p.id,f_c.id)
+
+
+    f_c.Rpose=np.dot(T_pose,f_p.Rpose)     
+
+    e=EDGE(mapp,f_p.id,f_c.id,T_pose)
+
+
+    # f_c.Rpose=np.dot(T_pose,f_p.Rpose) 
 
     # relative orientaion from point of second frame 
     #with respect to first frame
