@@ -34,6 +34,8 @@ def main():
         odometry.set_measurement(cam)
         odometry.set_information(0.5*np.eye(6))
         optimizer.add_edge(odometry)
+
+    
     
     
     vc = optimizer.vertex(1)

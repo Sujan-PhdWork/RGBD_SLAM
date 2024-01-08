@@ -22,14 +22,16 @@ K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
 
 
 #freiburg1_floor
-Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
-                    [-0.7960,    0.4055,   -0.4493,   -0.9763],
-                    [-0.0001,    0.7423,    0.6701,    0.6837],
-                    [      0,         0,         0,    1.0000]])
+# Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
+#                     [-0.7960,    0.4055,   -0.4493,   -0.9763],
+#                     [-0.0001,    0.7423,    0.6701,    0.6837],
+#                     [      0,         0,         0,    1.0000]])
 
 
+Int_pose=np.eye(4)
 
 mapp=Map()
+submap=Map()
 mapp.create_viewer()
 
 
@@ -79,6 +81,8 @@ def process_img(img,depth):
     e=EDGE(mapp,f_p.id,f_c.id,T_pose)
 
 
+
+
     # f_c.Rpose=np.dot(T_pose,f_p.Rpose) 
 
     # relative orientaion from point of second frame 
@@ -101,10 +105,21 @@ def process_img(img,depth):
         cv2.circle(img,(u_p,v_p),color=(0,255,0),radius=3)
         cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
     
+    # if frame.id >= 4:
+    #     submap.frames=map.frames[]
+        
+    
+    
     disp(img,"RGB")
     disp(depth,"Depth")
-    
     mapp.display()
+    
+    
+
+def optimize_frame(mapp):
+    mapp.optimize()
+    mapp.display()
+
 
 
 if __name__ == "__main__":
@@ -139,6 +154,7 @@ if __name__ == "__main__":
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
+    optimize_frame(mapp)
 
 
         
