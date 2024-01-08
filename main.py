@@ -15,10 +15,10 @@ K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
 
 # #freiburg1_xyz
 
-# Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
-#                    [-0.8837,-0.0287,-0.4672,0.6305],
-#                    [-0.0692,0.9952,0.0698,1.6380],
-#                    [0,0,0,1]])
+Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
+                   [-0.8837,-0.0287,-0.4672,0.6305],
+                   [-0.0692,0.9952,0.0698,1.6380],
+                   [0,0,0,1]])
 
 
 #freiburg1_floor
@@ -31,9 +31,8 @@ K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
 Int_pose=np.eye(4)
 
 mapp=Map()
-submap=Map()
 mapp.create_viewer()
-
+mapp.optimize_process()
 
 
 def process_img(img,depth):
@@ -72,13 +71,12 @@ def process_img(img,depth):
     f_p.pts=f_p.kps[idx1] # points on previous frame
     f_c.pts=f_c.kps[idx2] # points on current frame
 
+    if frame.id>4: 
+        T_pose=GICP(mapp,f_p.id,f_c.id)
+        f_c.Rpose=np.dot(T_pose,f_p.Rpose)     
+        EDGE(mapp,f_p.id,f_c.id,T_pose)
+
     
-    T_pose=GICP(mapp,f_p.id,f_c.id)
-
-
-    f_c.Rpose=np.dot(T_pose,f_p.Rpose)     
-
-    e=EDGE(mapp,f_p.id,f_c.id,T_pose)
 
 
 
@@ -112,13 +110,15 @@ def process_img(img,depth):
     
     disp(img,"RGB")
     disp(depth,"Depth")
-    mapp.display()
+
+
+    #
+    if frame.id % 20 ==1:
+        mapp.optimize(20)
     
+    mapp.display()
     
 
-def optimize_frame(mapp):
-    mapp.optimize()
-    mapp.display()
 
 
 
@@ -154,7 +154,7 @@ if __name__ == "__main__":
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
-    optimize_frame(mapp)
+    # optimize_frame(mapp)
 
 
         

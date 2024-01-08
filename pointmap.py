@@ -16,16 +16,24 @@ class Map(object):
 
 
 
+    def optimize_process(self):
+        self.p1=Process(target=self.optimize,args=())
+        self.p1.demon=True
+        self.p1.start()
     
-    def optimize(self):
+
+    def optimize(self,n=20):
         opt=g2o.SparseOptimizer()
         solver = g2o.BlockSolverSE3(g2o.LinearSolverCholmodSE3())
         solver = g2o.OptimizationAlgorithmLevenberg(solver)
         opt.set_algorithm(solver)
 
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
+        
+        #
+        
 
-        for f in self.frames:
+        for f in self.frames[-n:]:
             pose=f.pose
             v_se3=g2o.VertexSE3()
             v_se3.set_id(f.id)
@@ -36,7 +44,7 @@ class Map(object):
             v_se3.set_fixed(f.id==0)
             opt.add_vertex(v_se3)
 
-        for edge in self.edges:
+        for edge in self.edges[-n:]:
             f1,f2=edge.frames
             pose=edge.pose
             Eg= g2o.EdgeSE3()
@@ -55,10 +63,10 @@ class Map(object):
 
         # opt.save('gicp.g2o')
 
-        opt.set_verbose(True)
-        opt.optimize(20)
+        opt.set_verbose(False)
+        opt.optimize(10)
 
-        for f in self.frames:
+        for f in self.frames[-n:]:
             est = opt.vertex(f.id).estimate()
             R = est.rotation().matrix()
             t = est.translation()
@@ -83,6 +91,7 @@ class Map(object):
             R_poses.append(f.Rpose)
         
         self.q.put((np.array(poses),np.array(R_poses)))
+        self.q
 
 
 class EDGE(object):

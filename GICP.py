@@ -60,6 +60,8 @@ def GICP(mapp,id1,id2,verbose=False):
     if verbose:
         print('GICP Initial chi2 =', opt.chi2())
 
+    opt.optimize(5)
+
     R_pose=np.eye(4)
 
     # print(opt.vertex(1).estimate().R)
