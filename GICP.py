@@ -7,6 +7,7 @@ def GICP(mapp,id1,id2,verbose=False):
     opt = g2o.SparseOptimizer()
     solver = g2o.BlockSolverX(g2o.LinearSolverDenseX())
     algorithm = g2o.OptimizationAlgorithmLevenberg(solver)
+    robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
     opt.set_algorithm(algorithm)
     f1,f2=mapp.frames[id1],mapp.frames[id2]
 
@@ -52,6 +53,7 @@ def GICP(mapp,id1,id2,verbose=False):
         edge.set_vertex(1, opt.vertex(1))
         edge.set_measurement(meas)
         edge.set_information(meas.prec0(0.01))
+        edge.set_robust_kernel(robust_kernel)
         opt.add_edge(edge)
 
 

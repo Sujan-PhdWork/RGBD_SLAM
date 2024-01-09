@@ -6,6 +6,7 @@ from frame import match,Frame
 # import g2o
 from pointmap import Map,EDGE
 from GICP import GICP
+from loop_closure import loop_closure
 
 
 np.set_printoptions(suppress=True)
@@ -32,7 +33,8 @@ Int_pose=np.eye(4)
 
 mapp=Map()
 mapp.create_viewer()
-mapp.optimize_process()
+
+# mapp.optimize_process()
 
 
 def process_img(img,depth):
@@ -71,10 +73,13 @@ def process_img(img,depth):
     f_p.pts=f_p.kps[idx1] # points on previous frame
     f_c.pts=f_c.kps[idx2] # points on current frame
 
-    if frame.id>4: 
-        T_pose=GICP(mapp,f_p.id,f_c.id)
-        f_c.Rpose=np.dot(T_pose,f_p.Rpose)     
-        EDGE(mapp,f_p.id,f_c.id,T_pose)
+    if frame.id>20:
+        loop_closure(mapp,20)
+    
+    # if frame.id>1: 
+    #     T_pose=GICP(mapp,f_p.id,f_c.id)
+    #     f_c.Rpose=np.dot(T_pose,f_p.Rpose)     
+    #     EDGE(mapp,f_p.id,f_c.id,T_pose)
 
     
 
@@ -113,8 +118,8 @@ def process_img(img,depth):
 
 
     #
-    if frame.id % 20 ==1:
-        mapp.optimize(20)
+    # if frame.id % 20 ==1:
+        # mapp.optimize(20)
     
     mapp.display()
     
