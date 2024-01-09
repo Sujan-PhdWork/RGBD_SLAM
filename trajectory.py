@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
 
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
 
     depth_paths=dataset_path+'groundtruth.txt'
     dlist=data_trajectory(depth_paths)

@@ -6,7 +6,9 @@ from frame import match,Frame
 # import g2o
 from pointmap import Map,EDGE
 from GICP import GICP
-from loop_closure import loop_closure
+from loop_closure import loop_closure,lc_process
+from threading import Thread,Lock
+
 
 
 np.set_printoptions(suppress=True)
@@ -23,19 +25,16 @@ Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
 
 
 #freiburg1_floor
-# Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
-#                     [-0.7960,    0.4055,   -0.4493,   -0.9763],
-#                     [-0.0001,    0.7423,    0.6701,    0.6837],
-#                     [      0,         0,         0,    1.0000]])
+Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
+                    [-0.7960,    0.4055,   -0.4493,   -0.9763],
+                    [-0.0001,    0.7423,    0.6701,    0.6837],
+                     [      0,         0,         0,    1.0000]])
 
 
-Int_pose=np.eye(4)
+# Int_pose=np.eye(4)
 
 mapp=Map()
 mapp.create_viewer()
-
-# mapp.optimize_process()
-
 
 def process_img(img,depth):
     
@@ -73,12 +72,13 @@ def process_img(img,depth):
     f_p.pts=f_p.kps[idx1] # points on previous frame
     f_c.pts=f_c.kps[idx2] # points on current frame
 
-    if frame.id>20:
-        loop_closure(mapp,20)
+    if frame.id >20 and frame.id %5 == 0:
+        lc_process(mapp,20)
     
     # if frame.id>1: 
+        
     #     T_pose=GICP(mapp,f_p.id,f_c.id)
-    #     f_c.Rpose=np.dot(T_pose,f_p.Rpose)     
+    #     # f_c.Rpose=np.dot(T_pose,f_p.Rpose)     
     #     EDGE(mapp,f_p.id,f_c.id,T_pose)
 
     
@@ -86,18 +86,9 @@ def process_img(img,depth):
 
 
 
-    # f_c.Rpose=np.dot(T_pose,f_p.Rpose) 
 
     # relative orientaion from point of second frame 
     #with respect to first frame
-
-    # print("pose")
-    # print(f_c.pose[:3,3])
-    # R_pose=np.dot(T_pose,R_pose)
-    # print("point_pose")
-    # print(R_pose[:3,3])
-
-
 
 
     for kp1,kp2 in zip(f_p.kps[idx1],f_c.kps[idx2]):
@@ -107,10 +98,7 @@ def process_img(img,depth):
 
         cv2.circle(img,(u_p,v_p),color=(0,255,0),radius=3)
         cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
-    
-    # if frame.id >= 4:
-    #     submap.frames=map.frames[]
-        
+
     
     
     disp(img,"RGB")
@@ -119,12 +107,16 @@ def process_img(img,depth):
 
     #
     # if frame.id % 20 ==1:
-        # mapp.optimize(20)
+    #     mapp.optimize()
     
+    # mapp.display()
+    
+
+
+
+def optimize_frame(mapp):
+    mapp.optimize()
     mapp.display()
-    
-
-
 
 
 if __name__ == "__main__":
@@ -147,6 +139,10 @@ if __name__ == "__main__":
 
 
         process_img(frame,depth)
+
+        # t1=Thread(target=process_img,args=(frame,depth))
+        # t1.start()
+        
         # print(frame)
         
         # if mapp.q is None :
@@ -159,7 +155,8 @@ if __name__ == "__main__":
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
-    # optimize_frame(mapp)
+    
+    optimize_frame(mapp)
 
 
         

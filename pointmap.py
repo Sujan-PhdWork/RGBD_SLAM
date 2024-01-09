@@ -12,17 +12,9 @@ class Map(object):
         self.q=None
         self.Dmap=Disp_map()
     
-
-
-
-
-    def optimize_process(self):
-        self.p1=Process(target=self.optimize,args=())
-        self.p1.demon=True
-        self.p1.start()
     
 
-    def optimize(self,n=20):
+    def optimize(self):
         opt=g2o.SparseOptimizer()
         solver = g2o.BlockSolverSE3(g2o.LinearSolverCholmodSE3())
         solver = g2o.OptimizationAlgorithmLevenberg(solver)
@@ -33,7 +25,7 @@ class Map(object):
         #
         
 
-        for f in self.frames[-n:]:
+        for f in self.frames:
             pose=f.pose
             v_se3=g2o.VertexSE3()
             v_se3.set_id(f.id)
@@ -44,7 +36,7 @@ class Map(object):
             v_se3.set_fixed(f.id==0)
             opt.add_vertex(v_se3)
 
-        for edge in self.edges[-n:]:
+        for edge in self.edges:
             f1,f2=edge.frames
             pose=edge.pose
             Eg= g2o.EdgeSE3()
@@ -52,7 +44,7 @@ class Map(object):
             Eg.set_vertex(1,opt.vertex(f2.id))
             scam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
             Eg.set_measurement(scam)
-            Eg.set_information(5*np.eye(6))
+            Eg.set_information(0.5*np.eye(6))
             Eg.set_robust_kernel(robust_kernel)
             opt.add_edge(Eg)
 
@@ -63,10 +55,10 @@ class Map(object):
 
         # opt.save('gicp.g2o')
 
-        opt.set_verbose(False)
-        opt.optimize(10)
+        opt.set_verbose(True)
+        opt.optimize(100)
 
-        for f in self.frames[-n:]:
+        for f in self.frames:
             est = opt.vertex(f.id).estimate()
             R = est.rotation().matrix()
             t = est.translation()
@@ -85,13 +77,14 @@ class Map(object):
         self.p.start()
 
     def display(self):
-        poses,R_poses=[],[]
+        poses,edges=[],[]
         for f in self.frames:
             poses.append(f.pose)
-            R_poses.append(f.Rpose)
+        for e in self.edges:
+            f1,f2=e.frames
+            edges.append((f1.pose[:3,3],f2.pose[:3,3]))
         
-        self.q.put((np.array(poses),np.array(R_poses)))
-        self.q
+        self.q.put((np.array(poses),np.array(edges)))
 
 
 class EDGE(object):
