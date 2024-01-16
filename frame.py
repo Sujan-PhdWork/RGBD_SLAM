@@ -3,6 +3,10 @@ import numpy as np
 from transformation import *
 from ransac import *
 from utils import normalize
+import joblib
+
+model_filename = 'BoW/kmeans_model.joblib'
+kmeans_loaded = joblib.load(model_filename)
 
 
 IRt=np.eye(4)
@@ -71,14 +75,17 @@ def match(f1,f2):
 
     pose=extractRt(model)
 
-    return idx1,idx2,pose   
+    return idx1,idx2,pose 
+
 
 class Frame(object):
     def __init__(self,mapp,img,depth,K):
         
         
         pts,self.des=extract(img,depth)
-
+        labels = kmeans_loaded.predict(self.des)
+        self.hist, _ = np.histogram(labels, bins=kmeans_loaded.n_clusters)
+        self.Ihist=None
         #pts is 3d points unlormalize point
 
         self.K=K

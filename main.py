@@ -72,9 +72,10 @@ def process_img(img,depth):
     f_p.pts=f_p.kps[idx1] # points on previous frame
     f_c.pts=f_c.kps[idx2] # points on current frame
 
-    if frame.id >20 and frame.id %5 == 0:
+    # print(np.sum(f_c.hist))
+    if frame.id >20:
         lc_process(mapp,20)
-    
+#     
     # if frame.id>1: 
         
     #     T_pose=GICP(mapp,f_p.id,f_c.id)
