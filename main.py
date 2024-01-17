@@ -73,8 +73,11 @@ def process_img(img,depth):
     f_c.pts=f_c.kps[idx2] # points on current frame
 
     # print(np.sum(f_c.hist))
-    if frame.id >20:
-        lc_process(mapp,20)
+    if frame.id >100:
+        lc_process(mapp,100)
+    elif frame.id>3:
+        lc_process(mapp,frame.id)
+
 #     
     # if frame.id>1: 
         
@@ -117,12 +120,12 @@ def process_img(img,depth):
 
 def optimize_frame(mapp):
     mapp.optimize()
-    mapp.display()
+    
 
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
@@ -158,6 +161,7 @@ if __name__ == "__main__":
     cv2.destroyAllWindows()
     
     optimize_frame(mapp)
+    mapp.display()
 
 
         

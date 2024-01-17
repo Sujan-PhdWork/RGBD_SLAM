@@ -13,7 +13,7 @@ def lc_process(mapp,n):
 def TF_IDF(frames):
     
     N=len(frames)
-    IDF=np.zeros_like(frames[-1].hist)
+    IDF=np.zeros_like(frames[-1].hist)+1e-0
 
     for f in frames:
         hist=f.hist
@@ -23,50 +23,59 @@ def TF_IDF(frames):
         IDF=IDF+H_1.astype(int)
     
     for f in frames:
-        
+        hist=f.hist
         normalize=hist/np.sum(hist)
         
-        f.Ihist=normalize*np.log(N/IDF)
+        Ihist=normalize*np.log(N/IDF)
+        f.Ihist=Ihist
     
+
+def cos_distance(hist1,hist2):
     
+    hist1_mag=np.sqrt(np.dot(hist1.T,hist1))
+    hist2_mag=np.sqrt(np.dot(hist2.T,hist2))
+    cossim=np.dot(hist1.T,hist2)/(hist1_mag*hist2_mag)
+    dcos=1-cossim
+    # print(dcos.shape)
+
+    return (dcos)
 
 
 
 
 def loop_closure(mapp,n=20):
 
-    sampled_frames=random.sample(mapp.frames[:-1], n-1)
+    sampled_frames=random.sample(mapp.frames[:-3], n-3)
+    
     sampled_frames.append(mapp.frames[-1])
+    sampled_frames.append(mapp.frames[-2])
+    sampled_frames.append(mapp.frames[-3])
+    
     TF_IDF(sampled_frames)
 
-    print(sampled_frames[-1].Ihist)
+    f1=sampled_frames[-1]
+    f2=sampled_frames[-2]
+    f3=sampled_frames[-3]
 
 
-    # f1=
-    # idx1s=[]
-    # idx2s=[]
-    # poses=[]
-    
-    # for f in sampled_frames[:-1]:
-        
-    #     # print(f1.id,f.id)
-    #     # id1=f1.id
-    #     # id2=f.id
-    #     idx1,idx2,pose=match(f,f1)
-    #     poses.append(pose)
-    #     idx1s.append(len(idx1))
-    #     idx2s.append(len(idx2))
+    dcos_list=[]
+    for f in sampled_frames[:-3]:
 
-    # idx1s=np.array(idx1s)
-    
-    # max_index=np.argmax(idx1s)
+        dcos1=cos_distance(f.Ihist,f1.Ihist)
+        # dcos2=cos_distance(f.Ihist,f2.Ihist)
+        # dcos3=cos_distance(f.Ihist,f3.Ihist)
+        if dcos1 <0.25:
+            # print(dcos1,dcos2,dcos3)
+            _,_,pose=match(f,f1)
+            EDGE(mapp,f.id,f1.id,pose)
+        dcos_list.append(dcos1)
+    # print(min(dcos_list))
 
-    # f_final=sampled_frames[max_index]
+
+
+
+
     
-    # f_pose=poses[max_index]
-    
-    # EDGE(mapp,f_final.id,f.id,f_pose)
-    # EDGE(mapp,)
     
 
 

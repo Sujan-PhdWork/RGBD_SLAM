@@ -15,6 +15,7 @@ def quat2T(state):
     T=np.eye(4)
     txyz=state[:3]
     q=state[3:]
+    q=[q[3],q[0],q[1],q[2]]
     r = R.from_quat(q)
     T[:3,:3]=r.as_matrix()
     T[:3,3]=txyz
@@ -29,7 +30,7 @@ if __name__ == "__main__":
 
 
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
 
     depth_paths=dataset_path+'groundtruth.txt'
     dlist=data_trajectory(depth_paths)
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     # Define Projection and initial ModelView matrix
     scam = pangolin.OpenGlRenderState(
         pangolin.ProjectionMatrix(640, 480, 420, 420, 320, 240, 0.2, 100),
-        pangolin.ModelViewLookAt(-2, 2, -2, 0, 0, 0, pangolin.AxisDirection.AxisY))
+        pangolin.ModelViewLookAt(0, -10, -8, 0, 0, 0, 0,-1,0))
     handler = pangolin.Handler3D(scam)
 
     # Create Interactive View in window
@@ -59,6 +60,7 @@ if __name__ == "__main__":
     for d in dlist:
         state=np.array(d)
         T=np.dot(quat2T(state),T)
+        # print(T[:3,3])
         T_list.append(T)
         p_list.append(T[:3,3])
         T_array=np.array(T_list)
@@ -70,9 +72,9 @@ if __name__ == "__main__":
         gl.glClearColor(1.0, 1.0, 1.0, 1.0)
         dcam.Activate(scam)
         # Render OpenGL Cube
-        gl.glPointSize(10)
+        gl.glLineWidth(10)
         gl.glColor3f(1.0, 0.0, 0.0)
-        pangolin.DrawCameras(T_array)    
+        pangolin.DrawLine(p_array)    
 
         pangolin.FinishFrame()
 

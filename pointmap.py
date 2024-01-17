@@ -44,7 +44,7 @@ class Map(object):
             Eg.set_vertex(1,opt.vertex(f2.id))
             scam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
             Eg.set_measurement(scam)
-            Eg.set_information(0.5*np.eye(6))
+            Eg.set_information(5*np.eye(6))
             Eg.set_robust_kernel(robust_kernel)
             opt.add_edge(Eg)
 
@@ -65,6 +65,7 @@ class Map(object):
             ret=np.eye(4)
             ret[:3,:3]=R
             ret[:3,3]=t
+            print(t)
             f.pose = ret.copy()
 
 
@@ -91,9 +92,11 @@ class EDGE(object):
     
     def __init__(self,mapp,id1,id2,pose):
         
+        
         f1=mapp.frames[id1]
         f2=mapp.frames[id2]
 
+        print ("Adding edge between",f1.id,f2.id)
         self.frames=[f1,f2]
         self.pose=pose
         mapp.edges.append(self)

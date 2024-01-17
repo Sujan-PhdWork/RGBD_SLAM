@@ -19,7 +19,7 @@ class Disp_map(object):
 
         self.scam = pangolin.OpenGlRenderState(
             pangolin.ProjectionMatrix(W, H, 420, 420, W//2, H//2, 0.2, 1000),
-            pangolin.ModelViewLookAt(0, -10, -2, 0, 0, -1, pangolin.AxisDirection.AxisX))
+            pangolin.ModelViewLookAt(0, -10, -8, 0, 0, 0, 0,-1,0))
         self.handler = pangolin.Handler3D(self.scam)
 
         # Create Interactive View in window
@@ -35,7 +35,7 @@ class Disp_map(object):
 
         ppts=np.array([d[:3,3] for d in self.state[0]])
         
-        spts=np.array(self.state[1])
+        spts=np.array(self.state[0])
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glClearColor(1.0, 1.0, 1.0, 1.0)
