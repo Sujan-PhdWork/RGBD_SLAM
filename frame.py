@@ -59,7 +59,8 @@ def match(f1,f2):
             ret.append((kp1,kp2))
 
     assert len(ret)>=3
-    ret=np.array(ret)
+    ret=np.array(ret).astype(np.float32)
+
 
     idx1=np.array(idx1)
     idx2=np.array(idx2)
@@ -95,6 +96,10 @@ class Frame(object):
 
         self.kps[:,:2]=normalize(self.kps[:,:2],self.Kinv)
         #kps is 3d  normalize point 
+        self.kps[:,2]=self.kps[:,2]/1 #factor 
+        
+        self.kps[:,0]=self.kps[:,0]*self.kps[:,2]
+        self.kps[:,1]=self.kps[:,1]*self.kps[:,2]
 
         self.pose=IRt
         self.Rpose=IRt

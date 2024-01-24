@@ -14,7 +14,9 @@ def normalize(pts,Kinv):
         return np.dot(Kinv,add_ones(pts).T).T[:,0:2]
 
 def denormalize(pt,K):
-        ret=np.dot(K,np.array([pt[0],pt[1],1.0]))
+        K_copy=K.copy()
+        K_copy[:2,:2]=K[:2,:2]/(pt[2]+1e-09)
+        ret=np.dot(K_copy,np.array([pt[0],pt[1],1.0]))
         return int(round(ret[0])),int(round(ret[1])),pt[2]
 
 

@@ -14,7 +14,15 @@ from threading import Thread,Lock
 np.set_printoptions(suppress=True)
 
 W,H=640,480
-K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
+
+fx=517.3
+fy=516.5
+cx=318.6
+cy=255.3
+
+K=np.array([[fx,0,cx],[0,fy,cy],[0,0,1]])
+
+# K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
 
 # #freiburg1_xyz
 
@@ -50,7 +58,7 @@ def process_img(img,depth):
     f_p=mapp.frames[-2] # previous frame
     
     
-    idx1,idx2,pose=match(f_p,f_c)
+    idx2,idx1,pose=match(f_c,f_p)
     
     
     # idx1-> id of the keypoint in previous frame
@@ -65,6 +73,8 @@ def process_img(img,depth):
         return
     
     f_c.pose=np.dot(pose,f_p.pose) 
+    # EDGE(mapp,f_p.id,f_c.id,pose)
+    print(f_c.pose)
     
     # relative orientaion from pose of second frame 
     #with respect to first frame
@@ -73,10 +83,10 @@ def process_img(img,depth):
     f_c.pts=f_c.kps[idx2] # points on current frame
 
     # print(np.sum(f_c.hist))
-    if frame.id >100:
-        lc_process(mapp,100)
-    elif frame.id>3:
-        lc_process(mapp,frame.id)
+    # if frame.id >100:
+    #     lc_process(mapp,100)
+    # elif frame.id>3:
+    #     lc_process(mapp,frame.id)
 
 #     
     # if frame.id>1: 
@@ -111,9 +121,9 @@ def process_img(img,depth):
 
     #
     # if frame.id % 20 ==1:
-    #     mapp.optimize()
+    # mapp.optimize()
     
-    # mapp.display()
+    mapp.display()
     
 
 
@@ -125,7 +135,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+    dataset_path='../dataset/rgbd_dataset_freiburg2_rpy/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)

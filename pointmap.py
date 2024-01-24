@@ -51,11 +51,11 @@ class Map(object):
 
         opt.initialize_optimization()
         opt.compute_active_errors()
-        print('Initial chi2 =', opt.chi2())
+        # print('Initial chi2 =', opt.chi2())
 
         # opt.save('gicp.g2o')
 
-        opt.set_verbose(True)
+        opt.set_verbose(False)
         opt.optimize(100)
 
         for f in self.frames:
@@ -65,7 +65,7 @@ class Map(object):
             ret=np.eye(4)
             ret[:3,:3]=R
             ret[:3,3]=t
-            print(t)
+            # print(t)
             f.pose = ret.copy()
 
 
@@ -96,7 +96,7 @@ class EDGE(object):
         f1=mapp.frames[id1]
         f2=mapp.frames[id2]
 
-        print ("Adding edge between",f1.id,f2.id)
+        # print ("Adding edge between",f1.id,f2.id)
         self.frames=[f1,f2]
         self.pose=pose
         mapp.edges.append(self)
