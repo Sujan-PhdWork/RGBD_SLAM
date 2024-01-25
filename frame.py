@@ -96,7 +96,7 @@ class Frame(object):
 
         self.kps[:,:2]=normalize(self.kps[:,:2],self.Kinv)
         #kps is 3d  normalize point 
-        self.kps[:,2]=self.kps[:,2]/1 #factor 
+        self.kps[:,2]=self.kps[:,2]/5000 #factor 
         
         self.kps[:,0]=self.kps[:,0]*self.kps[:,2]
         self.kps[:,1]=self.kps[:,1]*self.kps[:,2]

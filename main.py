@@ -147,11 +147,11 @@ if __name__ == "__main__":
 
     for i in range(len(dlist)):
 
-        frame=cv2.imread(dataset_path+ilist[i])
-        depth=cv2.imread(dataset_path+dlist[i],0)
+        frame=cv2.imread(dataset_path+ilist[i]) # 8 bit image
+        depth=cv2.imread(dataset_path+dlist[i],-1) # 16 bit monochorme image 
         # print(frame.shape,depth.shape)
 
-
+        print(depth)
         process_img(frame,depth)
 
         # t1=Thread(target=process_img,args=(frame,depth))
