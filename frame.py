@@ -29,9 +29,20 @@ def extract(img,depth):
     feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
     kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
     kps,des=orb.compute(img,kps)
+    print(des.shape)
+    modified_kps=[]
+    modified_des=[]        
+    for i,kp in enumerate(kps):
+        u,v=map(lambda x: int(x),kp.pt)
+        z=depth[v,u]
+        if z!=0:
+            modified_kps.append(kp)
+            modified_des.append(des[i])   
+    
+    modified_des=np.array(modified_des)
 
     return np.array([(kp.pt[0],kp.pt[1],
-                      depth[int(round(kp.pt[1])),int(round(kp.pt[0]))]) for kp in kps]),des
+                      depth[int(round(kp.pt[1])),int(round(kp.pt[0]))]) for kp in modified_kps]),modified_des
 
 
 def match(f1,f2):
@@ -68,7 +79,7 @@ def match(f1,f2):
     # ret[:,0,:2]=normalize(ret[:,0,:2],f1.Kinv)
     # ret[:,1,:2]=normalize(ret[:,1,:2],f2.Kinv)
     
-    ransac=RANSAC(ret,Transformation(),3,3,100)
+    ransac=RANSAC(ret,Transformation(),3,0.05,100)
     model,inliers,error=ransac.solve()
 
     idx1=idx1[inliers]

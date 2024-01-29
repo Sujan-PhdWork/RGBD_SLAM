@@ -135,7 +135,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg2_rpy/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
