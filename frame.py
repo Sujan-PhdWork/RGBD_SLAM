@@ -29,7 +29,7 @@ def extract(img,depth):
     feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
     kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
     kps,des=orb.compute(img,kps)
-    print(des.shape)
+    # print(des.shape)
     modified_kps=[]
     modified_des=[]        
     for i,kp in enumerate(kps):
@@ -107,7 +107,7 @@ class Frame(object):
 
         self.kps[:,:2]=normalize(self.kps[:,:2],self.Kinv)
         #kps is 3d  normalize point 
-        self.kps[:,2]=self.kps[:,2]/5000 #factor 
+        self.kps[:,2]=self.kps[:,2]/5000.0 #factor 
         
         self.kps[:,0]=self.kps[:,0]*self.kps[:,2]
         self.kps[:,1]=self.kps[:,1]*self.kps[:,2]
@@ -117,3 +117,14 @@ class Frame(object):
         self.pts=[]
         self.id=len(mapp.frames)
         mapp.frames.append(self)
+
+
+
+class Keyframes(object):
+    def __init__(self,frame,mapp):
+        self.frame=frame
+        print(frame)
+        mapp.keyframes.append(self)
+        
+
+

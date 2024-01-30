@@ -2,12 +2,13 @@
 import cv2
 import numpy as np
 from utils import *
-from frame import match,Frame
+from frame import match,Frame,Keyframes
 # import g2o
 from pointmap import Map,EDGE
 from GICP import GICP
 from loop_closure import loop_closure,lc_process
 from threading import Thread,Lock
+from keyframe import Keyframe_detection
 
 
 
@@ -26,10 +27,10 @@ K=np.array([[fx,0,cx],[0,fy,cy],[0,0,1]])
 
 # #freiburg1_xyz
 
-Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
-                   [-0.8837,-0.0287,-0.4672,0.6305],
-                   [-0.0692,0.9952,0.0698,1.6380],
-                   [0,0,0,1]])
+# Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
+#                    [-0.8837,-0.0287,-0.4672,0.6305],
+#                    [-0.0692,0.9952,0.0698,1.6380],
+#                    [0,0,0,1]])
 
 
 #freiburg1_floor
@@ -43,13 +44,17 @@ Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
 
 mapp=Map()
 mapp.create_viewer()
-
 def process_img(img,depth):
     
     frame=Frame(mapp,img,depth,K)
+    
+    fe=Keyframe_detection(mapp)
+    print(fe)
 
+    # print(Keyframes.frame.pose)
 
     if (frame.id)==0:
+        # Keyframes(frame,mapp)
         frame.pose=Int_pose
         frame.Rpose=Int_pose
         return
@@ -59,7 +64,6 @@ def process_img(img,depth):
     
     
     idx2,idx1,pose=match(f_c,f_p)
-    
     
     # idx1-> id of the keypoint in previous frame
     # idx2-> id of the keypoint in current frame
@@ -73,8 +77,8 @@ def process_img(img,depth):
         return
     
     f_c.pose=np.dot(pose,f_p.pose) 
-    # EDGE(mapp,f_p.id,f_c.id,pose)
-    print(f_c.pose)
+    EDGE(mapp,f_p.id,f_c.id,pose)
+    # print(f_c.pose)
     
     # relative orientaion from pose of second frame 
     #with respect to first frame
@@ -84,10 +88,11 @@ def process_img(img,depth):
 
     # print(np.sum(f_c.hist))
     # if frame.id >100:
-    #     lc_process(mapp,100)
+        # lc_process(mapp,100)
     # elif frame.id>3:
     #     lc_process(mapp,frame.id)
 
+    
 #     
     # if frame.id>1: 
         
@@ -121,7 +126,7 @@ def process_img(img,depth):
 
     #
     # if frame.id % 20 ==1:
-    # mapp.optimize()
+    mapp.optimize()
     
     mapp.display()
     
@@ -151,7 +156,7 @@ if __name__ == "__main__":
         depth=cv2.imread(dataset_path+dlist[i],-1) # 16 bit monochorme image 
         # print(frame.shape,depth.shape)
 
-        print(depth)
+        # print(depth)
         process_img(frame,depth)
 
         # t1=Thread(target=process_img,args=(frame,depth))

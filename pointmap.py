@@ -8,9 +8,22 @@ class Map(object):
     def __init__(self):
         self.frames=[]
         self.edges=[]
+        self.keyframes=[]
+        self.index=0
         
         self.q=None
         self.Dmap=Disp_map()
+    
+    # def __iter__(self):
+    #     return self
+    
+    # def __next__(self):
+    #     if self.index<len(self.frames):
+    #         frame=self.frames[self.index]
+    #         self.index +=1
+    #         return frame
+    #     else:
+    #         raise StopIteration
     
     
 
@@ -86,6 +99,7 @@ class Map(object):
             edges.append((f1.pose[:3,3],f2.pose[:3,3]))
         
         self.q.put((np.array(poses),np.array(edges)))
+
 
 
 class EDGE(object):

@@ -64,7 +64,8 @@ def loop_closure(mapp,n=20):
         dcos1=cos_distance(f.Ihist,f1.Ihist)
         # dcos2=cos_distance(f.Ihist,f2.Ihist)
         # dcos3=cos_distance(f.Ihist,f3.Ihist)
-        if dcos1 <0.25:
+        if dcos1 <0.3:
+            print(dcos1)
             # print(dcos1,dcos2,dcos3)
             _,_,pose=match(f,f1)
             EDGE(mapp,f.id,f1.id,pose)
