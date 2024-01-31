@@ -41,7 +41,7 @@ class KeyframeThread(Thread):
                 
             if len(idx1)<self.th:
                 self.submap=submap
-                print("keyframe",keyid)
+                # print("keyframe",keyid)
                 local_mapping(submap)
                 # submap.frames.insert(0,keyframe)
                 # print("new_key frame is added ")

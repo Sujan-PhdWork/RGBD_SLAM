@@ -6,7 +6,7 @@ from frame import match,Frame,Keyframes
 # import g2o
 from pointmap import Map,EDGE
 from GICP import GICP
-from loop_closure import loop_closure,lc_process
+from loop_closure import Loop_Thread
 from threading import Thread,Lock
 from keyframe import Keyframes
 from  local_mapping import local_mapping  
@@ -29,17 +29,17 @@ K=np.array([[fx,0,cx],[0,fy,cy],[0,0,1]])
 
 # #freiburg1_xyz
 
-# Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
-#                    [-0.8837,-0.0287,-0.4672,0.6305],
-#                    [-0.0692,0.9952,0.0698,1.6380],
-#                    [0,0,0,1]])
+Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
+                   [-0.8837,-0.0287,-0.4672,0.6305],
+                   [-0.0692,0.9952,0.0698,1.6380],
+                   [0,0,0,1]])
 
 
 #freiburg1_floor
-Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
-                    [-0.7960,    0.4055,   -0.4493,   -0.9763],
-                    [-0.0001,    0.7423,    0.6701,    0.6837],
-                     [      0,         0,         0,    1.0000]])
+# Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
+#                     [-0.7960,    0.4055,   -0.4493,   -0.9763],
+#                     [-0.0001,    0.7423,    0.6701,    0.6837],
+#                      [      0,         0,         0,    1.0000]])
 
 
 # Int_pose=np.eye(4)
@@ -48,11 +48,15 @@ mapp=Map()
 mapp.create_viewer()
 
 #keyframe Thresolding
-th=300.0
+th1=500.0
 
 # Computing keyframe
 kf=Keyframes()
-kf.create_Thread(mapp,th)
+kf.create_Thread(mapp,th1)
+
+th2=0.2
+Loop=Loop_Thread()
+Loop.create_Thread(mapp,th2)
 
 
 def process_img(img,depth):
@@ -75,6 +79,9 @@ def process_img(img,depth):
     
     # finding the between consecutive frame 
     idx2,idx1,pose=match(f_c,f_p)
+    f_c.pose=np.dot(pose,f_p.pose)
+    EDGE(mapp,f_p.id,f_c.id,pose)
+
     
     #0 idx1-> id of the keypoint in previous frame
     # idx2-> id of the keypoint in current frame
@@ -91,13 +98,21 @@ def process_img(img,depth):
     # Main function is now bottelneck
 
     if frame.id %10 ==0:
-        print(frame.id)
+        # print(frame.id)
+        local_frames=[f.id for f in mapp.keyframes]
+        print(local_frames)
         kf.kf.event.set()
+        
+    
+    # 
+
+    # if frame.id %100 ==0
 
 
     
-
     
+
+
         # kf.kf.event.clear()
         
     # if not kf.kf.event.isSet():
@@ -128,6 +143,7 @@ def process_img(img,depth):
     disp(img,"RGB")
     disp(depth,"Depth")
     mapp.display()
+    mapp.optimize()
 
 
 def optimize_frame(mapp):
@@ -137,7 +153,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
@@ -145,7 +161,7 @@ if __name__ == "__main__":
     rgb_paths=dataset_path+'rgb.txt'
     ilist=data(rgb_paths)
 
-
+    Loop.lc.event.set()
 
     for i in range(len(dlist)):
 
