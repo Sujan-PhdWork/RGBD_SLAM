@@ -8,7 +8,7 @@ from pointmap import Map,EDGE
 from GICP import GICP
 from loop_closure import loop_closure,lc_process
 from threading import Thread,Lock
-from keyframe import Keyframe_detection
+from keyframe import Keyframes
 
 
 
@@ -44,17 +44,20 @@ Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
 
 mapp=Map()
 mapp.create_viewer()
+kf=Keyframes()
+kf.create_Thread(mapp)
+
 def process_img(img,depth):
     
     frame=Frame(mapp,img,depth,K)
     
-    fe=Keyframe_detection(mapp)
-    print(fe)
+    
 
     # print(Keyframes.frame.pose)
 
     if (frame.id)==0:
-        # Keyframes(frame,mapp)
+        mapp.keyframe=frame
+        mapp.keyframes.append(frame)
         frame.pose=Int_pose
         frame.Rpose=Int_pose
         return
@@ -91,9 +94,10 @@ def process_img(img,depth):
         # lc_process(mapp,100)
     # elif frame.id>3:
     #     lc_process(mapp,frame.id)
-
     
-#     
+    print("current keyframe",mapp.keyframes[-1].id)
+    
+    
     # if frame.id>1: 
         
     #     T_pose=GICP(mapp,f_p.id,f_c.id)
@@ -126,9 +130,9 @@ def process_img(img,depth):
 
     #
     # if frame.id % 20 ==1:
-    mapp.optimize()
+    # mapp.optimize()
     
-    mapp.display()
+    # mapp.display()
     
 
 

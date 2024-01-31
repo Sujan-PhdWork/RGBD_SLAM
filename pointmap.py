@@ -8,6 +8,7 @@ class Map(object):
     def __init__(self):
         self.frames=[]
         self.edges=[]
+        self.keyframe=None
         self.keyframes=[]
         self.index=0
         
