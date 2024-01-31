@@ -116,7 +116,7 @@ class Frame(object):
 
         self.pose=IRt
         self.id=len(mapp.frames)
-        self.keyid=0
+        self.keyid=None
         mapp.frames.append(self)
 
 

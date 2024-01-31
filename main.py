@@ -9,6 +9,8 @@ from GICP import GICP
 from loop_closure import loop_closure,lc_process
 from threading import Thread,Lock
 from keyframe import Keyframes
+from  local_mapping import local_mapping  
+
 
 
 
@@ -85,6 +87,10 @@ def process_img(img,depth):
     # if pose is None:
     # return
     
+    if frame.id %20 ==0:
+        kf.kf.event.set()
+
+    local_mapping(kf.kf.submap)
     
     #creating a edge between consecutive frame
     # f_c.pose=np.dot(pose,f_p.pose) 
@@ -92,7 +98,7 @@ def process_img(img,depth):
     
     
     
-    # print("current keyframe id",mapp.keyframes[-1].pose)
+    # print("current keyframe id",mapp.keyframes[-1].id)
     
     
 
