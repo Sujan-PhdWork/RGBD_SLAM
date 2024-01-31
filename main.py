@@ -82,17 +82,17 @@ def process_img(img,depth):
     assert len(idx1)>0
     assert len(idx2)>0
     
-    if pose is None:
-        return
+    # if pose is None:
+    # return
     
     
     #creating a edge between consecutive frame
-    f_c.pose=np.dot(pose,f_p.pose) 
-    EDGE(mapp,f_p.id,f_c.id,pose)
+    # f_c.pose=np.dot(pose,f_p.pose) 
+    # EDGE(mapp,f_p.id,f_c.id,pose)
     
     
     
-    print("current keyframe",mapp.keyframes[-1].id)
+    # print("current keyframe id",frame.keyid)
     
     
 
@@ -144,8 +144,8 @@ if __name__ == "__main__":
             break
     cv2.destroyAllWindows()
     
-    optimize_frame(mapp)
-    mapp.display()
+    # optimize_frame(mapp)
+    # mapp.display()
 
 
         

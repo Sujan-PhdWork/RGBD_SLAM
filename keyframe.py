@@ -19,10 +19,16 @@ class KeyframeThread(Thread):
         # self.event=Event()
 
     def Keyframe_detection(self):
+        submap=Map()
         for f in self.mapp.frames[self.mapp.keyframes[-1].id:]:
+            keyid=self.mapp.keyframes[-1].id
             idx1,idx2,pose=match(f,self.mapp.keyframes[-1])
+            f.keyid=keyid
+            
+            submap.frames.append(f)
             if len(idx1)<self.th:
-                # print(f.id)
+                local_frames=[f.id for f in submap.frames]
+                print(local_frames)
                 self.mapp.keyframes.append(f)
                 break
     
@@ -34,6 +40,7 @@ class KeyframeThread(Thread):
                     self.Keyframe_detection()
         
         
+
 
     
 
