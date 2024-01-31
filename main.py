@@ -60,6 +60,7 @@ def process_img(img,depth):
     
     # creating frame object
     frame=Frame(mapp,img,depth,K)
+    mapp.frames.append(frame)
  
 
     if (frame.id)==0:
@@ -87,10 +88,21 @@ def process_img(img,depth):
     # if pose is None:
     # return
     
-    if frame.id %20 ==0:
+    # Main function is now bottelneck
+
+    if frame.id %10 ==0:
+        print(frame.id)
         kf.kf.event.set()
 
-    local_mapping(kf.kf.submap)
+
+    
+
+    
+        # kf.kf.event.clear()
+        
+    # if not kf.kf.event.isSet():
+    # local_mapping(kf.kf.submap) 
+   
     
     #creating a edge between consecutive frame
     # f_c.pose=np.dot(pose,f_p.pose) 
@@ -115,6 +127,7 @@ def process_img(img,depth):
     
     disp(img,"RGB")
     disp(depth,"Depth")
+    mapp.display()
 
 
 def optimize_frame(mapp):

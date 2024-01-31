@@ -41,12 +41,16 @@ class KeyframeThread(Thread):
                 
             if len(idx1)<self.th:
                 self.submap=submap
-                # local_mapping(submap)
+                print("keyframe",keyid)
+                local_mapping(submap)
                 # submap.frames.insert(0,keyframe)
                 # print("new_key frame is added ")
+                
                 self.mapp.keyframes.append(f)
+                break
             elif len(idx1)>self.th:
                 submap.frames.append(f)
+                    
                
         
             
@@ -54,10 +58,15 @@ class KeyframeThread(Thread):
 
         while True:
             if self.event.isSet():
+                # print(1)
                 with self.lock:
                     if len(self.mapp.frames)>1:
+                        
                         self.Keyframe_detection()
+                        # local_mapping(self.submap)
                         self.event.clear()
+                        # self.event.clear()
+                        
             else:
                 self.event.wait()
 
