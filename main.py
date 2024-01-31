@@ -16,6 +16,7 @@ np.set_printoptions(suppress=True)
 
 W,H=640,480
 
+# camera parameters
 fx=517.3
 fy=516.5
 cx=318.6
@@ -23,7 +24,6 @@ cy=255.3
 
 K=np.array([[fx,0,cx],[0,fy,cy],[0,0,1]])
 
-# K=np.array([[1,0,W//2],[0,1,H//2],[0,0,1]])
 
 # #freiburg1_xyz
 
@@ -44,33 +44,39 @@ Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
 
 mapp=Map()
 mapp.create_viewer()
+
+#keyframe Thresolding
+th=300.0
+
+# Computing keyframe
 kf=Keyframes()
-kf.create_Thread(mapp)
+kf.create_Thread(mapp,th)
+
 
 def process_img(img,depth):
     
+    
+    # creating frame object
     frame=Frame(mapp,img,depth,K)
-    
-    
-
-    # print(Keyframes.frame.pose)
+ 
 
     if (frame.id)==0:
+        # Adding first frameas key frame 
         mapp.keyframe=frame
         mapp.keyframes.append(frame)
-        frame.pose=Int_pose
-        frame.Rpose=Int_pose
         return
     
     f_c=mapp.frames[-1] #current frame
     f_p=mapp.frames[-2] # previous frame
     
     
+    # finding the between consecutive frame 
     idx2,idx1,pose=match(f_c,f_p)
     
-    # idx1-> id of the keypoint in previous frame
+    #0 idx1-> id of the keypoint in previous frame
     # idx2-> id of the keypoint in current frame
-    # pose relative transformation of current frame  
+    
+    # pose-> relative transformation of current frame  
     # with respect to previous frame 
 
     assert len(idx1)>0
@@ -79,41 +85,18 @@ def process_img(img,depth):
     if pose is None:
         return
     
+    
+    #creating a edge between consecutive frame
     f_c.pose=np.dot(pose,f_p.pose) 
     EDGE(mapp,f_p.id,f_c.id,pose)
-    # print(f_c.pose)
     
-    # relative orientaion from pose of second frame 
-    #with respect to first frame
-
-    f_p.pts=f_p.kps[idx1] # points on previous frame
-    f_c.pts=f_c.kps[idx2] # points on current frame
-
-    # print(np.sum(f_c.hist))
-    # if frame.id >100:
-        # lc_process(mapp,100)
-    # elif frame.id>3:
-    #     lc_process(mapp,frame.id)
+    
     
     print("current keyframe",mapp.keyframes[-1].id)
     
     
-    # if frame.id>1: 
-        
-    #     T_pose=GICP(mapp,f_p.id,f_c.id)
-    #     # f_c.Rpose=np.dot(T_pose,f_p.Rpose)     
-    #     EDGE(mapp,f_p.id,f_c.id,T_pose)
 
-    
-
-
-
-
-
-    # relative orientaion from point of second frame 
-    #with respect to first frame
-
-
+    # displaying features on RGB image
     for kp1,kp2 in zip(f_p.kps[idx1],f_c.kps[idx2]):
         u_p,v_p,_=denormalize(kp1,f_p.K)
         u_c,v_c,_=denormalize(kp2,f_c.K)
@@ -126,15 +109,6 @@ def process_img(img,depth):
     
     disp(img,"RGB")
     disp(depth,"Depth")
-
-
-    #
-    # if frame.id % 20 ==1:
-    # mapp.optimize()
-    
-    # mapp.display()
-    
-
 
 
 def optimize_frame(mapp):
@@ -158,18 +132,9 @@ if __name__ == "__main__":
 
         frame=cv2.imread(dataset_path+ilist[i]) # 8 bit image
         depth=cv2.imread(dataset_path+dlist[i],-1) # 16 bit monochorme image 
-        # print(frame.shape,depth.shape)
-
-        # print(depth)
+        
         process_img(frame,depth)
 
-        # t1=Thread(target=process_img,args=(frame,depth))
-        # t1.start()
-        
-        # print(frame)
-        
-        # if mapp.q is None :
-        #     break
 
         if frame is None:
             print("End of frame")

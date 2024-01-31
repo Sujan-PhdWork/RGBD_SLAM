@@ -8,33 +8,34 @@ from pointmap import Map
 
 
 class KeyframeThread(Thread):
-    def __init__(self,mapp,lock):
+    def __init__(self,mapp,lock,th):
         Thread.__init__(self)
         self.mapp=mapp
         self.Keyframe=None
         self.lock=lock
         self.daemon=True
+        self.th=th
         
         # self.event=Event()
 
+    def Keyframe_detection(self):
+        for f in self.mapp.frames[self.mapp.keyframes[-1].id:]:
+            idx1,idx2,pose=match(f,self.mapp.keyframes[-1])
+            if len(idx1)<self.th:
+                # print(f.id)
+                self.mapp.keyframes.append(f)
+                break
     
     def run(self):
 
         while True:
             with self.lock:
                 if len(self.mapp.frames)>1:
-                    Keyframe_detection(self.mapp)
+                    self.Keyframe_detection()
         
         
 
-def Keyframe_detection(mapp,th=300):
-    for f in mapp.frames[mapp.keyframes[-1].id:]:
-        idx1,idx2,pose=match(f,mapp.keyframes[-1])
-        if len(idx1)<th:
-            # print(f.id)
-            mapp.keyframes.append(f)
-            break
-
+    
 
 
 
@@ -42,9 +43,9 @@ def Keyframe_detection(mapp,th=300):
 class Keyframes(object):
     def __init__(self):
         pass
-    def create_Thread(self,mapp):
+    def create_Thread(self,mapp,th):
         lock=Lock()
-        self.kf=KeyframeThread(mapp,lock)
+        self.kf=KeyframeThread(mapp,lock,th)
         self.kf.start()
         
         # self.kf.event.set()

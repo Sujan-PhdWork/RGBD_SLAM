@@ -32,6 +32,7 @@ def extract(img,depth):
     # print(des.shape)
     modified_kps=[]
     modified_des=[]        
+    
     for i,kp in enumerate(kps):
         u,v=map(lambda x: int(x),kp.pt)
         z=depth[v,u]
@@ -106,6 +107,7 @@ class Frame(object):
         self.kps=pts.copy()
 
         self.kps[:,:2]=normalize(self.kps[:,:2],self.Kinv)
+        
         #kps is 3d  normalize point 
         self.kps[:,2]=self.kps[:,2]/5000.0 #factor 
         
@@ -113,8 +115,6 @@ class Frame(object):
         self.kps[:,1]=self.kps[:,1]*self.kps[:,2]
 
         self.pose=IRt
-        self.Rpose=IRt
-        self.pts=[]
         self.id=len(mapp.frames)
         mapp.frames.append(self)
 

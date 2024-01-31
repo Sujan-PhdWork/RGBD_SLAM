@@ -8,23 +8,12 @@ class Map(object):
     def __init__(self):
         self.frames=[]
         self.edges=[]
-        self.keyframe=None
+        
         self.keyframes=[]
         self.index=0
         
         self.q=None
         self.Dmap=Disp_map()
-    
-    # def __iter__(self):
-    #     return self
-    
-    # def __next__(self):
-    #     if self.index<len(self.frames):
-    #         frame=self.frames[self.index]
-    #         self.index +=1
-    #         return frame
-    #     else:
-    #         raise StopIteration
     
     
 
