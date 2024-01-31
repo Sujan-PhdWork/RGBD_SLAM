@@ -92,7 +92,7 @@ def process_img(img,depth):
     
     
     
-    # print("current keyframe id",frame.keyid)
+    # print("current keyframe id",mapp.keyframes[-1].pose)
     
     
 

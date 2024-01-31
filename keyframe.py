@@ -3,7 +3,8 @@
 from frame import match
 from threading import Thread,Lock,Event
 from pointmap import Map
-
+import numpy as np
+from  local_mapping import local_mapping  
 
 
 
@@ -20,18 +21,44 @@ class KeyframeThread(Thread):
 
     def Keyframe_detection(self):
         submap=Map()
-        for f in self.mapp.frames[self.mapp.keyframes[-1].id:]:
-            keyid=self.mapp.keyframes[-1].id
-            idx1,idx2,pose=match(f,self.mapp.keyframes[-1])
+        Rpose=np.eye(4)
+        keyframe=self.mapp.keyframes[-1]
+        keyid=self.mapp.keyframes[-1].id
+        for f in self.mapp.frames[keyframe.id:]:
+            print("second")
+            if f.id==keyid:
+                submap.frames.append(f)
+                continue
+
+            idx1,idx2,pose=match(f,keyframe)
+            
+            # This is the relative position from the keyframe
+            # Rpose=np.dot(pose,Rpose)
+            # f.pose=Rpose.copy()
+
+            
+            
             f.keyid=keyid
             
-            submap.frames.append(f)
+        
+        
             if len(idx1)<self.th:
-                local_frames=[f.id for f in submap.frames]
-                print(local_frames)
+                
+                
+                
+                #putting key frame pose as identity
+                # f.pose=np.eye(4)
+                local_mapping(submap)
                 self.mapp.keyframes.append(f)
                 break
-    
+            elif len(idx1)>self.th:
+                submap.frames.append(f)
+        
+        # sending the submap to calculate pose 
+        # or we can create the local map
+               
+        
+            
     def run(self):
 
         while True:
@@ -43,6 +70,7 @@ class KeyframeThread(Thread):
 
 
     
+
 
 
 
