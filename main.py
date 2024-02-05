@@ -29,10 +29,10 @@ K=np.array([[fx,0,cx],[0,fy,cy],[0,0,1]])
 
 # #freiburg1_xyz
 
-Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
-                   [-0.8837,-0.0287,-0.4672,0.6305],
-                   [-0.0692,0.9952,0.0698,1.6380],
-                   [0,0,0,1]])
+# Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
+#                    [-0.8837,-0.0287,-0.4672,0.6305],
+#                    [-0.0692,0.9952,0.0698,1.6380],
+#                    [0,0,0,1]])
 
 
 #freiburg1_floor
@@ -42,19 +42,19 @@ Int_pose=np.array([[0.4630,0.0940,-0.8814,1.3563],
 #                      [      0,         0,         0,    1.0000]])
 
 
-# Int_pose=np.eye(4)
+Int_pose=np.eye(4)
 
 mapp=Map()
 mapp.create_viewer()
 
 #keyframe Thresolding
-th1=500.0
+# th1=900.0
 
 # # Computing keyframe
 # kf=Keyframes()
 # kf.create_Thread(mapp,th1)
 
-th2=0.2
+th2=0.6
 Loop=Loop_Thread()
 Loop.create_Thread(mapp,th2)
 
@@ -154,7 +154,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+    dataset_path='../dataset/rgbd_dataset_freiburg2_xyz/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)

@@ -43,7 +43,7 @@ def loop_closure(mapp,th):
         return
 
 
-    sampled_frames=sampled_frames=random.sample(mapp.frames[:-1], 13)
+    sampled_frames=sampled_frames=random.sample(mapp.frames[:-1], 17)
     
     sampled_frames.append(mapp.frames[-1])
     sampled_frames.append(mapp.frames[-2])
@@ -55,20 +55,44 @@ def loop_closure(mapp,th):
     f2=sampled_frames[-2]
     f3=sampled_frames[-3]
 
-
+    # number of features in current frame  
+    N=len(f1.des)
+    
     dcos_list=[]
     for f in sampled_frames[:-3]:
-        print(f1.id-f.id)
+        # print(f1.id-f.id)
         if (f1.id-f.id)<20:
             continue
+        
+        
+        
         brute_force = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
-        no_of_matches1 = brute_force.match(f.des,f1.des)
-        no_of_matches2 = brute_force.match(f.des,f2.des)
-        no_of_matches3 = brute_force.match(f.des,f3.des)
-        print(f.id,": ",f1.id," no of matches :",len(no_of_matches1))
-        print(f.id,": ",f2.id," no of matches :",len(no_of_matches2))
-        print(f.id,": ",f3.id," no of matches :",len(no_of_matches3))  
-        print(" ")    
+        matches1 = brute_force.match(f.des,f1.des)
+        
+        #number of matched features
+         
+        N1=len(matches1)
+        
+        #
+        # print(f.id," : ",f1.id)
+        # print("ratio of the matched features: ",N1/N)
+
+        # matches2 = brute_force.match(f.des,f2.des)
+        # N2=len(matches2)
+
+        # matches3 = brute_force.match(f.des,f3.des)
+        # N3=len(matches3)
+
+        # avg maches
+        # N=(N1+N2+N3)/3.0
+
+        if (N1/N)>=th:
+            idx2,idx1,pose=match(f1,f)
+            EDGE(mapp,f.id,f1.id,pose)
+            print(f.id," : ", (N1/N))
+        
+        
+        
 
 
         
