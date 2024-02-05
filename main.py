@@ -50,9 +50,9 @@ mapp.create_viewer()
 #keyframe Thresolding
 th1=500.0
 
-# Computing keyframe
-kf=Keyframes()
-kf.create_Thread(mapp,th1)
+# # Computing keyframe
+# kf=Keyframes()
+# kf.create_Thread(mapp,th1)
 
 th2=0.2
 Loop=Loop_Thread()
@@ -64,12 +64,13 @@ def process_img(img,depth):
     
     # creating frame object
     frame=Frame(mapp,img,depth,K)
+    
     mapp.frames.append(frame)
  
 
     if (frame.id)==0:
         # Adding first frameas key frame 
-        mapp.keyframe=frame
+        # mapp.keyframe=frame
         mapp.keyframes.append(frame)
         return
     
@@ -97,11 +98,11 @@ def process_img(img,depth):
     
     # Main function is now bottelneck
 
-    if frame.id %10 ==0:
-        # print(frame.id)
-        local_frames=[f.id for f in mapp.keyframes]
-        print(local_frames)
-        kf.kf.event.set()
+    # if frame.id %10 ==0:
+    #     # print(frame.id)
+    #     local_frames=[f.id for f in mapp.keyframes]
+    #     print(local_frames)
+    #     # kf.kf.event.set()
         
     
     # 
