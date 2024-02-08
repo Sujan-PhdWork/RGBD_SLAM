@@ -1,0 +1,8 @@
+prefix=/media/sujan/Work/One_Folder/Visual_SLAM/RGBD_SLAM/Implementation/Examples/ROS/RGBD_SLAM/devel
+
+Name: rgbd_slam_1
+Description: Description of rgbd_slam_1
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

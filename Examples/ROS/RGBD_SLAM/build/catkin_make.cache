@@ -1,0 +1,2 @@
+rgbd_slam_1
+-DCATKIN_DEVEL_PREFIX=/media/sujan/Work/One_Folder/Visual_SLAM/RGBD_SLAM/Implementation/Examples/ROS/RGBD_SLAM/devel -DCMAKE_INSTALL_PREFIX=/media/sujan/Work/One_Folder/Visual_SLAM/RGBD_SLAM/Implementation/Examples/ROS/RGBD_SLAM/install -G Unix Makefiles
