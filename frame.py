@@ -4,6 +4,7 @@ from transformation import *
 from ransac import *
 from utils import normalize
 import joblib
+import pcl
 
 # model_filename = 'BoW/kmeans_model.joblib'
 # kmeans_loaded = joblib.load(model_filename)
@@ -90,11 +91,31 @@ def match(f1,f2):
 
     return idx1,idx2,pose 
 
+# def pointcloud(img,depth):
+#     cloud = pcl.PointCloud_PointXYZRGB()
+#     P=pcl.PointXYZRGBA
+
+#     # for m in range(depth.shape[0]):
+#     #     for n in range(depth.shape[1]):
+#     #         d=depth[m,n]
+
+#     #         if d==0:
+#     #             continue
+
+#     #         p=pcl.PointXYZRGBA
+
+
+
+
+
+
+
+
 
 class Frame(object):
     def __init__(self,mapp,img,depth,K):
         
-        
+        # p=pointcloud(img,depth)
         pts,self.des=extract(img,depth)
         # labels = kmeans_loaded.predict(self.des)
         # self.hist, _ = np.histogram(labels, bins=kmeans_loaded.n_clusters)

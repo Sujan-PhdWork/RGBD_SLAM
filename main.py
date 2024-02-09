@@ -8,8 +8,9 @@ from pointmap import Map,EDGE
 from GICP import GICP
 from loop_closure import Loop_Thread
 from threading import Thread,Lock
-from keyframe import Keyframes
-from  local_mapping import local_mapping  
+
+# from keyframe import Keyframes
+# from  local_mapping import local_mapping  
 
 
 
