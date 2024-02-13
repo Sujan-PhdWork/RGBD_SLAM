@@ -34,8 +34,8 @@ class Disp_map(object):
         
 
         ppts=np.array([d[:3,3] for d in self.state[0]])
-        
-        spts=np.array(self.state[0])
+        spts=np.array([d[:3,3] for d in self.state[1]])
+        # spts=np.array(self.state[0])
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glClearColor(1.0, 1.0, 1.0, 1.0)
@@ -47,9 +47,9 @@ class Disp_map(object):
         gl.glColor3f(0.0, 1.0, 0.0)
         pangolin.DrawPoints(ppts)
 
-        # gl.glPointSize(10)
-        # gl.glColor3f(0.0, 0.0, 1.0)
-        # pangolin.DrawCameras(spts)
+        gl.glPointSize(10)
+        gl.glColor3f(0.0, 0.0, 1.0)
+        pangolin.DrawPoints(spts)
 
         # print(spts.shape)
         point1 = np.array([0, 0, 0])

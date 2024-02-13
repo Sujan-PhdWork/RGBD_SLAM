@@ -23,40 +23,37 @@ def extractRt(model):
 
     return pose
 
-def to_3D(pts):
+def to_3D(depth,K):
+  
+    fx=K[0,0]
+    cx=K[0,2]
 
-    cloud=pcl.PointCloud()
-    
-    # fx=K[0,0]
-    # cx=K[0,2]
-
-    # fy=K[1,1]
-    # cy=K[1,2]
+    fy=K[1,1]
+    cy=K[1,2]
 
 
-    # H=depth.shape[0]
-    # W=depth.shape[1]
+    H=depth.shape[0]
+    W=depth.shape[1]
 
-    # u=np.arange(W)
-    # v=np.arange(H)
+    u=np.arange(W)
+    v=np.arange(H)
 
-    # u, v = np.meshgrid(u, v)
+    u, v = np.meshgrid(u, v)
 
     
-    # z=depth/5000.0
-    # x=(u-cx)*z/fx
-    # y=(v-cy)*z/fy
+    z=depth/5000.0
+    x=(u-cx)*z/fx
+    y=(v-cy)*z/fy
 
-    # x=np.ravel(x).reshape(-1,1)
-    # y=np.ravel(y).reshape(-1,1)
-    # z=np.ravel(z).reshape(-1,1)
+    x=np.ravel(x).reshape(-1,1)
+    y=np.ravel(y).reshape(-1,1)
+    z=np.ravel(z).reshape(-1,1)
 
-    # xyz=np.concatenate((x,y,z),axis=1)
-    # xyz = xyz[~np.all(xyz == 0, axis=1)]
+    xyz=np.concatenate((x,y,z),axis=1)
+    xyz = xyz[~np.all(xyz == 0, axis=1)]
 
-    pts=pts.astype(np.float32)
-    cloud.from_array(pts)
-    return cloud
+    xyz=xyz.astype(np.float32)
+    return xyz
 
 
 def extract(img,depth):
@@ -64,7 +61,10 @@ def extract(img,depth):
     orb=cv2.ORB_create(100)
     feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
     # print(feats)
-    kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],_size=20) for f in feats]
+    kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
+    
+    # _size in numpy<1.75
+    
     kps,des=orb.compute(img,kps)
     # print(des.shape)
     modified_kps=[]
@@ -144,7 +144,8 @@ def GICP(cloud2,cloud1):
 class Frame(object):
     def __init__(self,mapp,img,depth,K):
         
-        
+        self.cloud=to_3D(depth,K)
+
         pts,self.des=extract(img,depth)
         # labels = kmeans_loaded.predict(self.des)
         # self.hist, _ = np.histogram(labels, bins=kmeans_loaded.n_clusters)
@@ -166,8 +167,8 @@ class Frame(object):
         self.kps[:,0]=self.kps[:,0]*self.kps[:,2]
         self.kps[:,1]=self.kps[:,1]*self.kps[:,2]
 
-        self.cloud=to_3D(self.kps)
         self.pose=IRt
+        self.Rpose=IRt
         self.id=len(mapp.frames)
         self.keyid=None
         

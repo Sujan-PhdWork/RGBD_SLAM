@@ -81,14 +81,16 @@ class Map(object):
         self.p.start()
 
     def display(self):
-        poses,edges=[],[]
+        poses,R_poses=[],[]
         for f in self.frames:
             poses.append(f.pose)
-        for e in self.edges:
-            f1,f2=e.frames
-            edges.append((f1.pose[:3,3],f2.pose[:3,3]))
+        for f in self.frames:
+                R_poses.append(f.Rpose)
+        # for e in self.edges:
+        #     f1,f2=e.frames
+        #     edges.append((f1.pose[:3,3],f2.pose[:3,3]))
         
-        self.q.put((np.array(poses),np.array(edges)))
+        self.q.put((np.array(poses),np.array(R_poses)))
 
 
 

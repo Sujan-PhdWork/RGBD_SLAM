@@ -2,10 +2,10 @@
 import cv2
 import numpy as np
 from utils import *
-from frame import match,Frame,Keyframes,GICP
+from frame import match,Frame,Keyframes
 # import g2o
 from pointmap import Map,EDGE
-# from GICP import GICP
+from GICP_test import GICP
 from loop_closure import Loop_Thread
 from threading import Thread,Lock
 
@@ -55,9 +55,9 @@ mapp.create_viewer()
 # kf=Keyframes()
 # kf.create_Thread(mapp,th1)
 
-th2=0.6
-Loop=Loop_Thread()
-Loop.create_Thread(mapp,th2)
+# th2=0.6
+# Loop=Loop_Thread()
+# Loop.create_Thread(mapp,th2)
 
 
 def process_img(img,depth):
@@ -78,15 +78,21 @@ def process_img(img,depth):
     f_c=mapp.frames[-1] #current frame
     f_p=mapp.frames[-2] # previous frame
     
-    
+    R_pose=GICP(f_c.cloud,f_p.cloud)
+    # print(R_pose)
+
     # finding the between consecutive frame 
     idx2,idx1,pose=match(f_c,f_p)
     f_c.pose=np.dot(pose,f_p.pose)
+    # EDGE(mapp,f_p.id,f_c.id,pose)
 
 
-    # Rpose=GICP(f_p.cloud,f_c.cloud)
     
-    EDGE(mapp,f_p.id,f_c.id,pose)
+    # f_c.Rpose=np.dot(R_pose,f_p.Rpose)
+    EDGE(mapp,f_p.id,f_c.id,R_pose)
+
+    
+    
     
     #0 idx1-> id of the keypoint in previous frame
     # idx2-> id of the keypoint in current frame
@@ -166,7 +172,7 @@ if __name__ == "__main__":
     rgb_paths=dataset_path+'rgb.txt'
     ilist=data(rgb_paths)
 
-    Loop.lc.event.set()
+    # Loop.lc.event.set()
 
     for i in range(len(dlist)):
 

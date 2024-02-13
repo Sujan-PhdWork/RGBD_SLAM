@@ -43,7 +43,7 @@ def loop_closure(mapp,th):
         return
 
 
-    sampled_frames=sampled_frames=random.sample(mapp.frames[:-1], 17)
+    sampled_frames=random.sample(mapp.frames[:-1], 17)
     
     sampled_frames.append(mapp.frames[-1])
     sampled_frames.append(mapp.frames[-2])
