@@ -5,7 +5,7 @@ from scipy.spatial import KDTree
 import pcl.pcl_visualization
 import pcl
 
-# visual = pcl.pcl_visualization.CloudViewing()
+visual = pcl.pcl_visualization.CloudViewing()
 
 
 def GICP(cloud_C,cloud_P):
@@ -19,7 +19,7 @@ def GICP(cloud_C,cloud_P):
     pose=np.eye(4)
 
 
-    for i in range(4):
+    while True:
 
         idx=np.random.choice(cloud2.shape[0], 500, replace=False)
         # idx=np.random.randint(size=500) 
@@ -101,13 +101,13 @@ def GICP(cloud_C,cloud_P):
         # print(rmse)
 
         
-        # pltcloud1 = pcl.PointCloud()
-        # pltcloud1.from_array(cloud1.astype(np.float32))
-        # pltcloud2 = pcl.PointCloud()
-        # pltcloud2.from_array(cloud2.astype(np.float32))
+        pltcloud1 = pcl.PointCloud()
+        pltcloud1.from_array(cloud_C.astype(np.float32))
+        pltcloud2 = pcl.PointCloud()
+        pltcloud2.from_array(cloud_P.astype(np.float32))
 
-        # visual.ShowMonochromeCloud(pltcloud1)
-        # visual.ShowMonochromeCloud(pltcloud2)
+        visual.ShowMonochromeCloud(pltcloud1)
+        visual.ShowMonochromeCloud(pltcloud2)
 
         # error_tree=KDTree(cloud2)
         # distances, _ = error_tree.query(cloud1, k=1)
@@ -118,7 +118,7 @@ def GICP(cloud_C,cloud_P):
         # rmse = np.sqrt(mse)
         # # if rmse <
         # print(rmse)
-    return pose
+    # return pose
         
 
 
