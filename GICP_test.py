@@ -4,8 +4,44 @@ import random
 from scipy.spatial import KDTree
 import pcl.pcl_visualization
 import pcl
+from threading import Thread,Lock,Event
+from pointmap import Map,EDGE
 
-visual = pcl.pcl_visualization.CloudViewing()
+
+# visual = pcl.pcl_visualization.CloudViewing()
+
+class GICPThread(Thread):
+    def __init__(self,mapp,lock):
+        Thread.__init__(self)
+        self.mapp=mapp
+        self.lock=lock
+        self.daemon=True
+        self.event=Event()
+        self.pose=np.eye(4)
+
+    def run (self):
+        while True:
+            # if self.event.isSet():
+            
+            with self.lock:
+                if self.event.isSet():
+                    if len(self.mapp.frames)>1:
+                        f_c=self.mapp.frames[-1]
+                        f_p=self.mapp.frames[-2]
+                        cloud1=f_c.cloud
+                        cloud2=f_p.cloud
+
+                        self.pose=GICP(cloud1,cloud2)
+                        print("GICP",f_c.id,f_p.id)
+                        EDGE(self.mapp,f_p.id,f_c.id,self.pose,0.5)
+
+                        # self.event.clear()
+                        # local_mapping(self.submap)
+                        # self.event.clear()
+                        # self.event.clear()    
+                        # sleep(3)
+                else:
+                    self.event.wait()
 
 
 def GICP(cloud_C,cloud_P):
@@ -19,9 +55,9 @@ def GICP(cloud_C,cloud_P):
     pose=np.eye(4)
 
 
-    while True:
+    for i in range(5):
 
-        idx=np.random.choice(cloud2.shape[0], 500, replace=False)
+        idx=np.random.choice(cloud2.shape[0], 1000, replace=False)
         # idx=np.random.randint(size=500) 
 
         sampled_cloud2 = cloud2[idx,:]
@@ -42,7 +78,7 @@ def GICP(cloud_C,cloud_P):
         opt = g2o.SparseOptimizer()
         solver = g2o.BlockSolverX(g2o.LinearSolverDenseX())
         algorithm = g2o.OptimizationAlgorithmLevenberg(solver)
-        # robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
+        robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
         opt.set_algorithm(algorithm)
 
 
@@ -72,8 +108,8 @@ def GICP(cloud_C,cloud_P):
             edge.set_vertex(0, opt.vertex(0))
             edge.set_vertex(1, opt.vertex(1))
             edge.set_measurement(meas)
-            edge.set_information(meas.prec0(1.2))
-            # edge.set_robust_kernel(robust_kernel)
+            edge.set_information(meas.prec0(0.01))
+            edge.set_robust_kernel(robust_kernel)
             opt.add_edge(edge)
 
 
@@ -83,7 +119,7 @@ def GICP(cloud_C,cloud_P):
         # print('GICP Initial chi2 =', opt.chi2())
 
 
-        opt.optimize(3)
+        opt.optimize(5)
 
         R=opt.vertex(1).estimate().R
         t=opt.vertex(1).estimate().t
@@ -101,13 +137,13 @@ def GICP(cloud_C,cloud_P):
         # print(rmse)
 
         
-        pltcloud1 = pcl.PointCloud()
-        pltcloud1.from_array(cloud_C.astype(np.float32))
-        pltcloud2 = pcl.PointCloud()
-        pltcloud2.from_array(cloud_P.astype(np.float32))
+        # pltcloud1 = pcl.PointCloud()
+        # pltcloud1.from_array(cloud1.astype(np.float32))
+        # pltcloud2 = pcl.PointCloud()
+        # pltcloud2.from_array(cloud2.astype(np.float32))
 
-        visual.ShowMonochromeCloud(pltcloud1)
-        visual.ShowMonochromeCloud(pltcloud2)
+        # visual.ShowMonochromeCloud(pltcloud1)
+        # visual.ShowMonochromeCloud(pltcloud2)
 
         # error_tree=KDTree(cloud2)
         # distances, _ = error_tree.query(cloud1, k=1)
@@ -118,7 +154,18 @@ def GICP(cloud_C,cloud_P):
         # rmse = np.sqrt(mse)
         # # if rmse <
         # print(rmse)
-    # return pose
+    return pose
+
+
+class GICP_Thread(object):
+    def __init__(self):
+        pass
+    def create_Thread(self,mapp):
+        lock=Lock()
+        self.gc=GICPThread(mapp,lock)
+        self.gc.start()
+        self.gc.event.clear()
+
         
 
 

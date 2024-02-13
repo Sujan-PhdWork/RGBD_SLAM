@@ -39,11 +39,11 @@ class LoopThread(Thread):
 
 
 def loop_closure(mapp,th):
-    if len(mapp.frames)<20:
+    if len(mapp.frames)<30:
         return
 
 
-    sampled_frames=random.sample(mapp.frames[:-1], 17)
+    sampled_frames=random.sample(mapp.frames[:-1], 28)
     
     sampled_frames.append(mapp.frames[-1])
     sampled_frames.append(mapp.frames[-2])
@@ -88,7 +88,7 @@ def loop_closure(mapp,th):
 
         if (N1/N)>=th:
             idx2,idx1,pose=match(f1,f)
-            EDGE(mapp,f.id,f1.id,pose)
+            EDGE(mapp,f.id,f1.id,pose,4)
             print(f.id," : ", (N1/N))
         
         
@@ -108,6 +108,7 @@ class Loop_Thread(object):
         lock=Lock()
         self.lc=LoopThread(mapp,lock,th)
         self.lc.start()
+        self.lc.event.clear()
 
 
     

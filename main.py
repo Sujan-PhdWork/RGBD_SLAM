@@ -5,7 +5,7 @@ from utils import *
 from frame import match,Frame,Keyframes
 # import g2o
 from pointmap import Map,EDGE
-from GICP_test import GICP
+from GICP_test import GICP,GICP_Thread
 from loop_closure import Loop_Thread
 from threading import Thread,Lock
 
@@ -55,14 +55,20 @@ mapp.create_viewer()
 # kf=Keyframes()
 # kf.create_Thread(mapp,th1)
 
-# th2=0.6
-# Loop=Loop_Thread()
-# Loop.create_Thread(mapp,th2)
+th2=0.58
+Loop=Loop_Thread()
+Loop.create_Thread(mapp,th2)
+
+GICP_T=GICP_Thread()
+GICP_T.create_Thread(mapp)
+
 
 
 def process_img(img,depth):
     
-    
+    # GICP_T.gc.event.set()
+    # Loop.lc.event.set()
+        
     # creating frame object
     frame=Frame(mapp,img,depth,K)
     
@@ -71,25 +77,35 @@ def process_img(img,depth):
 
     if (frame.id)==0:
         # Adding first frameas key frame 
-        # mapp.keyframe=frame
+        # mapp.keyframe=
+        GICP_T.gc.event.set()
+        Loop.lc.event.set()
+    
         mapp.keyframes.append(frame)
         return
     
     f_c=mapp.frames[-1] #current frame
     f_p=mapp.frames[-2] # previous frame
     
-    R_pose=GICP(f_c.cloud,f_p.cloud)
+    # R_pose=GICP(f_c.cloud,f_p.cloud)
     # print(R_pose)
-
+    # GICP_T.gc.event.set()
     # finding the between consecutive frame 
     idx2,idx1,pose=match(f_c,f_p)
     f_c.pose=np.dot(pose,f_p.pose)
-    # EDGE(mapp,f_p.id,f_c.id,pose)
 
+    # print("3point",f_c.id,f_p.id,pose)
+    # while True:
+    #         if not GICP_T.gc.event.isSet():
+    #             break
+
+        
+    EDGE(mapp,f_p.id,f_c.id,pose,0.6)
+    
 
     
     # f_c.Rpose=np.dot(R_pose,f_p.Rpose)
-    EDGE(mapp,f_p.id,f_c.id,R_pose)
+    # EDGE(mapp,f_p.id,f_c.id,R_pose)
 
     
     
@@ -164,7 +180,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg2_xyz/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
@@ -172,7 +188,7 @@ if __name__ == "__main__":
     rgb_paths=dataset_path+'rgb.txt'
     ilist=data(rgb_paths)
 
-    # Loop.lc.event.set()
+    Loop.lc.event.set()
 
     for i in range(len(dlist)):
 
