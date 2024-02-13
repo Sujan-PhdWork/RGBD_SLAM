@@ -23,12 +23,48 @@ def extractRt(model):
 
     return pose
 
+def to_3D(pts):
+
+    cloud=pcl.PointCloud()
+    
+    # fx=K[0,0]
+    # cx=K[0,2]
+
+    # fy=K[1,1]
+    # cy=K[1,2]
+
+
+    # H=depth.shape[0]
+    # W=depth.shape[1]
+
+    # u=np.arange(W)
+    # v=np.arange(H)
+
+    # u, v = np.meshgrid(u, v)
+
+    
+    # z=depth/5000.0
+    # x=(u-cx)*z/fx
+    # y=(v-cy)*z/fy
+
+    # x=np.ravel(x).reshape(-1,1)
+    # y=np.ravel(y).reshape(-1,1)
+    # z=np.ravel(z).reshape(-1,1)
+
+    # xyz=np.concatenate((x,y,z),axis=1)
+    # xyz = xyz[~np.all(xyz == 0, axis=1)]
+
+    pts=pts.astype(np.float32)
+    cloud.from_array(pts)
+    return cloud
+
 
 def extract(img,depth):
     
     orb=cv2.ORB_create(100)
     feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
-    kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
+    # print(feats)
+    kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],_size=20) for f in feats]
     kps,des=orb.compute(img,kps)
     # print(des.shape)
     modified_kps=[]
@@ -89,23 +125,16 @@ def match(f1,f2):
 
     pose=extractRt(model)
 
-    return idx1,idx2,pose 
-
-# def pointcloud(img,depth):
-#     cloud = pcl.PointCloud_PointXYZRGB()
-#     P=pcl.PointXYZRGBA
-
-#     # for m in range(depth.shape[0]):
-#     #     for n in range(depth.shape[1]):
-#     #         d=depth[m,n]
-
-#     #         if d==0:
-#     #             continue
-
-#     #         p=pcl.PointXYZRGBA
+    return idx1,idx2,pose
 
 
-
+def GICP(cloud2,cloud1):
+    icp = cloud1.make_IterativeClosestPoint()
+    converged, transf, estimate, fitness = icp.icp(cloud1, cloud2)
+    # print('has converged:' + str(converged) + ' score: ' + str(fitness))
+    # print(str(transf))
+    return transf
+    
 
 
 
@@ -115,7 +144,7 @@ def match(f1,f2):
 class Frame(object):
     def __init__(self,mapp,img,depth,K):
         
-        # p=pointcloud(img,depth)
+        
         pts,self.des=extract(img,depth)
         # labels = kmeans_loaded.predict(self.des)
         # self.hist, _ = np.histogram(labels, bins=kmeans_loaded.n_clusters)
@@ -123,6 +152,8 @@ class Frame(object):
         #pts is 3d points unlormalize point
 
         self.K=K
+
+        
         self.Kinv=np.linalg.inv(K)
 
         self.kps=pts.copy()
@@ -135,6 +166,7 @@ class Frame(object):
         self.kps[:,0]=self.kps[:,0]*self.kps[:,2]
         self.kps[:,1]=self.kps[:,1]*self.kps[:,2]
 
+        self.cloud=to_3D(self.kps)
         self.pose=IRt
         self.id=len(mapp.frames)
         self.keyid=None

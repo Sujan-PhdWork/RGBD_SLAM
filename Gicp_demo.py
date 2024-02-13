@@ -1,100 +1,89 @@
+# -*- coding: utf-8 -*-
+# How to use iterative closest point
+# http://pointclouds.org/documentation/tutorials/iterative_closest_point.php#iterative-closest-point
 
-import cv2
-from utils import *
 import pcl
+import random
 import numpy as np
-import pcl.pcl_visualization
+# import pcl
+
+# from pcl import icp, gicp, icp_nl
 
 
-cx=325.5
-fx=253.5
+def main():
+    # help(pcl)
+    cloud_in = pcl.PointCloud()
+    cloud_out = pcl.PointCloud()
 
-cy=518.0
-fy=519.0
+    # Fill in the CloudIn data
+    # cloud_in->width    = 5;
+    # cloud_in->height   = 1;
+    # cloud_in->is_dense = false;
+    # cloud_in->points.resize (cloud_in->width * cloud_in->height);
+    # for (size_t i = 0; i < cloud_in->points.size (); ++i)
+    # {
+    #   cloud_in->points[i].x = 1024 * rand () / (RAND_MAX + 1.0f);
+    #   cloud_in->points[i].y = 1024 * rand () / (RAND_MAX + 1.0f);
+    #   cloud_in->points[i].z = 1024 * rand () / (RAND_MAX + 1.0f);
+    # }
+    points_in = np.zeros((5, 3), dtype=np.float32)
+    RAND_MAX = 1024.0
+    for i in range(0, 5):
+        points_in[i][0] = 1024 * random.random() / RAND_MAX
+        points_in[i][1] = 1024 * random.random() / RAND_MAX
+        points_in[i][2] = 1024 * random.random() / RAND_MAX
 
-s=5000.0
-visual = pcl.pcl_visualization.CloudViewing()
+    cloud_in.from_array(points_in)
 
+    # std::cout << "Saved " << cloud_in->points.size () << " data points to input:" << std::endl;
+    # for (size_t i = 0; i < cloud_in->points.size (); ++i) std::cout << "    " <<
+    #   cloud_in->points[i].x << " " << cloud_in->points[i].y << " " <<
+    #   cloud_in->points[i].z << std::endl;
+    # *cloud_out = *cloud_in;
+    print('Saved ' + str(cloud_in.size) + ' data points to input:')
+    points_out = np.zeros((5, 3), dtype=np.float32)
 
-def to_3D(fx,fy,depth,cx,cy,s,u,v):
+    # std::cout << "size:" << cloud_out->points.size() << std::endl;
+    # for (size_t i = 0; i < cloud_in->points.size (); ++i)
+    # cloud_out->points[i].x = cloud_in->points[i].x + 0.7f;
 
-    cloud=pcl.PointCloud()
-    z=depth/s
-    x=(u-cx)*z/fx
-    y=(v-cy)*z/fy
+    # print('size:' + str(cloud_out.size))
+    # for i in range(0, cloud_in.size):
+    print('size:' + str(points_out.size))
+    for i in range(0, cloud_in.size):
+        points_out[i][0] = points_in[i][0] + 0.7
+        points_out[i][1] = points_in[i][1]
+        points_out[i][2] = points_in[i][2]
 
-    x=np.ravel(x).reshape(-1,1)
-    y=np.ravel(y).reshape(-1,1)
-    z=np.ravel(z).reshape(-1,1)
+    cloud_out.from_array(points_out)
 
-    xyz=np.concatenate((x,y,z),axis=1)
-    xyz = xyz[~np.all(xyz == 0, axis=1)]
+    # std::cout << "Transformed " << cloud_in->points.size () << " data points:" << std::endl;
+    print('Transformed ' + str(cloud_in.size) + ' data points:')
 
-    xyz=xyz.astype(np.float32)
-    cloud.from_array(xyz)
-    return cloud
+    # for (size_t i = 0; i < cloud_out->points.size (); ++i)
+    #   std::cout << "    " << cloud_out->points[i].x << " " << cloud_out->points[i].y << " " << cloud_out->points[i].z << std::endl;
+    for i in range(0, cloud_out.size):
+        print('     ' + str(cloud_out[i][0]) + ' ' + str(cloud_out[i]
+                                                         [1]) + ' ' + str(cloud_out[i][2]) + ' data points:')
 
+    # pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+    # icp.setInputCloud(cloud_in);
+    # icp.setInputTarget(cloud_out);
+    # pcl::PointCloud<pcl::PointXYZ> Final;
+    # icp.align(Final);
+    icp = cloud_in.make_IterativeClosestPoint()
+    # Final = icp.align()
+    converged, transf, estimate, fitness = icp.icp(cloud_in, cloud_out)
 
-
-
-
-
-
-def process_img(img,depth):
-    H=depth.shape[0]
-    W=depth.shape[1]
-
-    u=np.arange(W)
-    v=np.arange(H)
-
-    u, v = np.meshgrid(u, v)
-
-    cloud = to_3D(fx, fy, depth, cx, cy, s, u, v)
-    # xyz=xyz[xyz != 0]
-
-    # xyz = xyz[~np.all(xyz == 0, axis=1)]
-
-
-    
-    visual.ShowMonochromeCloud(cloud)
-
-
-
-            
-
-
-
-    disp(img,"RGB")
-    disp(depth,"Depth")
+    # std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+    # std::cout << icp.getFinalTransformation() << std::endl;
+    # print('has converged:' + str(icp.hasConverged()) + ' score: ' + str(icp.getFitnessScore()) )
+    # print(str(icp.getFinalTransformation()))
+    print('has converged:' + str(converged) + ' score: ' + str(fitness))
+    print(str(transf))
 
 
 if __name__ == "__main__":
-    
-    dataset_path='../dataset/rgbd_dataset_freiburg2_xyz/'
-
-    depth_paths=dataset_path+'depth.txt'
-    dlist=data(depth_paths)
-
-    rgb_paths=dataset_path+'rgb.txt'
-    ilist=data(rgb_paths)
-
-    # Loop.lc.event.set()
-
-    for i in range(len(dlist)):
-
-        frame=cv2.imread(dataset_path+ilist[i]) # 8 bit image
-        depth=cv2.imread(dataset_path+dlist[i],-1) # 16 bit monochorme image 
-        
-        process_img(frame,depth)
-
-
-        if frame is None:
-            print("End of frame")
-            break
-        
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cv2.destroyAllWindows()
-    
-    # optimize_frame(mapp)
-    # mapp.display()
+    # import cProfile
+    # cProfile.run('main()', sort='time')
+    main()

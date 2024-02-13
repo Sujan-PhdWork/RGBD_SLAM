@@ -2,10 +2,10 @@
 import cv2
 import numpy as np
 from utils import *
-from frame import match,Frame,Keyframes
+from frame import match,Frame,Keyframes,GICP
 # import g2o
 from pointmap import Map,EDGE
-from GICP import GICP
+# from GICP import GICP
 from loop_closure import Loop_Thread
 from threading import Thread,Lock
 
@@ -82,8 +82,11 @@ def process_img(img,depth):
     # finding the between consecutive frame 
     idx2,idx1,pose=match(f_c,f_p)
     f_c.pose=np.dot(pose,f_p.pose)
-    EDGE(mapp,f_p.id,f_c.id,pose)
 
+
+    # Rpose=GICP(f_p.cloud,f_c.cloud)
+    
+    EDGE(mapp,f_p.id,f_c.id,pose)
     
     #0 idx1-> id of the keypoint in previous frame
     # idx2-> id of the keypoint in current frame
