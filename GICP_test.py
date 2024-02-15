@@ -6,10 +6,11 @@ import pcl.pcl_visualization
 import pcl
 from threading import Thread,Lock,Event
 from pointmap import Map,EDGE
+from time import sleep
 
 
-# visual = pcl.pcl_visualization.CloudViewing()
-
+#visual = pcl.pcl_visualization.CloudViewing()
+viewer = pcl.pcl_visualization.PCLVisualizering()
 class GICPThread(Thread):
     def __init__(self,mapp,lock):
         Thread.__init__(self)
@@ -44,51 +45,57 @@ class GICPThread(Thread):
                     self.event.wait()
 
 
-def GICP(cloud_C,cloud_P):
+def GICP(f_c,f_p):
 
     #cloud1: current frame cloud data
     #cloud2: previous frame cloud data
 
+    cloud_p=f_p.cloud.copy()
+    cloud_c=f_c.cloud.copy()
+    
+    
+    poses=[np.eye(4),np.dot(f_c.pose,np.linalg.inv(f_p.pose))]
+    
+    pose=poses[1]
+    t = pose[:3,3]
+    R= pose[:3,:3]
 
-    cloud1=cloud_C.copy()
-    cloud2=cloud_P.copy()
-    pose=np.eye(4)
+    cloud_c=np.dot(R,cloud_c.T)+t.reshape(3,1)
+    cloud_c=cloud_c.T
+
+    
+    pltcloud_p = pcl.PointCloud()
+    pltcloud_p.from_array(cloud_p.astype(np.float32))
+    viewer.AddPointCloud(pltcloud_p,b"cloud_prior")
+    # viewer.AddPointCloud(pltcloud2,b"cloud2",1)
+    
 
 
-    for i in range(5):
+    j=1 
+    pltcloud_c = pcl.PointCloud()
+    pltcloud_c.from_array(cloud_c.astype(np.float32))
+    viewer.AddPointCloud(pltcloud_c,bytes(str(j),encoding='utf8'))
+    viewer.SpinOnce()
+    sleep(5)   
+            
+    # t_test=opt.vertex(1).estimate().t
+    
+    kdt=KDTree(cloud_p)
+    for j in range(2,1000):
+        # print(j)
+        viewer.RemovePointCloud(bytes(str(j-1),encoding='utf8'),0)
 
-        idx=np.random.choice(cloud2.shape[0], 1000, replace=False)
-        # idx=np.random.randint(size=500) 
-
-        sampled_cloud2 = cloud2[idx,:]
-
-        kdt=KDTree(cloud1)
-        dist, indices = kdt.query(sampled_cloud2,k=1)
-
-
-
-        # for i in range(len(cloud1)):
-        #     print(f"Nearest neighbor of point {i} in matrix2 is point {indices[i]} in matrix1 with distance {dist[i]}")
-
-
-        sampled_cloud1 = cloud1[indices,:]
-
-        # print(sampled_cloud2.shape,len(indices))
-
+        
+        
         opt = g2o.SparseOptimizer()
         solver = g2o.BlockSolverX(g2o.LinearSolverDenseX())
         algorithm = g2o.OptimizationAlgorithmLevenberg(solver)
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
         opt.set_algorithm(algorithm)
 
-
         for i in range(2):
-            # pose=np.dot(np.linalg.inv(f1.pose),f.pose)
-            pose=np.eye(4)
-            t = pose[:3,3]
-            R= pose[:3,:3]
-
-            pcam = g2o.Isometry3d(R,t)
+            pose=poses[i]
+            pcam = g2o.Isometry3d(pose[:3,:3],pose[:3,3])
             
             vc = g2o.VertexSE3()
             vc.set_id(i)
@@ -97,63 +104,66 @@ def GICP(cloud_C,cloud_P):
             
             opt.add_vertex(vc)
 
-        for i in range(sampled_cloud1.shape[0]):
+        idx=np.random.choice(cloud_c.shape[0], 10000, replace=False)    
+        sampled_cloudC = cloud_c[idx,:]
+        dist, indices = kdt.query(sampled_cloudC,k=1,p=2,distance_upper_bound=0.01)
+        
 
+        for i in range(sampled_cloudC.shape[0]):
+            if dist[i]>2:
+                continue
+            elif dist[i]<2:
+                meas = g2o.EdgeGICP()
+                meas.pos0 = cloud_p[indices[i],:]
+                meas.pos1 = sampled_cloudC[i,:]
 
-            meas = g2o.EdgeGICP()
-            meas.pos0 = sampled_cloud2[i,:]
-            meas.pos1 = sampled_cloud1[i,:]
-
-            edge = g2o.Edge_V_V_GICP()
-            edge.set_vertex(0, opt.vertex(0))
-            edge.set_vertex(1, opt.vertex(1))
-            edge.set_measurement(meas)
-            edge.set_information(meas.prec0(0.01))
-            edge.set_robust_kernel(robust_kernel)
-            opt.add_edge(edge)
+                edge = g2o.Edge_V_V_GICP()
+                edge.set_vertex(0, opt.vertex(0))
+                edge.set_vertex(1, opt.vertex(1))
+                edge.set_measurement(meas)
+                edge.set_information(meas.prec0(0.01))
+                edge.set_robust_kernel(robust_kernel)
+                opt.add_edge(edge)
 
 
         opt.initialize_optimization()
         opt.compute_active_errors()
-        # if verbose:
-        # print('GICP Initial chi2 =', opt.chi2())
+    #     # if verbose:
+        print('GICP Initial chi2 =', opt.chi2())
 
-
-        opt.optimize(5)
-
-        R=opt.vertex(1).estimate().R
-        t=opt.vertex(1).estimate().t
-
-        T=np.eye(4)
-        T[:3,:3]=R
-        T[:3,3]=t
-        pose=np.dot(T,pose)
-        cloud1=np.dot(R,cloud1.T)+t.reshape(3,1)
-
-        cloud1=cloud1.T
-        # squared_errors = np.sum((cloud1 - cloud2)**2, axis=1)
-        # mse = np.mean(squared_errors)
-        # rmse = np.sqrt(mse)
-        # print(rmse)
-
+        # opt.set_verbose(True)
+        opt.optimize(10)
+  
+        vc = opt.vertex(1)
         
-        # pltcloud1 = pcl.PointCloud()
-        # pltcloud1.from_array(cloud1.astype(np.float32))
-        # pltcloud2 = pcl.PointCloud()
-        # pltcloud2.from_array(cloud2.astype(np.float32))
+        T=np.eye(4)
+        
+        # ensuresing the orthonormal matrix
+        # u and vh are both orthogonal matrices, meaning their transpose is their inverse.
+        
+        u,s,vh = np.linalg.svd(vc.estimate().R) 
+        T[:3,:3]=u @ vh
+        
+        # print(np.linalg.det(vc.estimate().R))
+        T[:3,3]=vc.estimate().t
 
-        # visual.ShowMonochromeCloud(pltcloud1)
-        # visual.ShowMonochromeCloud(pltcloud2)
 
-        # error_tree=KDTree(cloud2)
-        # distances, _ = error_tree.query(cloud1, k=1)
+        print('GICP',T)
+        poses[1]=T
+
+        cloud_c=np.dot(vc.estimate().R,cloud_c.T)+vc.estimate().t.reshape(3,1)
+        cloud_c=cloud_c.T
+        
+        
+        pltcloud3 = pcl.PointCloud()
+        pltcloud3.from_array(cloud_c.astype(np.float32))
 
 
-        # # print(t)
-        # mse = np.mean(distances**2)
-        # rmse = np.sqrt(mse)
-        # # if rmse <
-        # print(rmse)
+        viewer.AddPointCloud(pltcloud3,bytes(str(j),encoding='utf8'))
+        viewer.SpinOnce()
+        sleep(0.1) 
+        
+   
     return pose
 
 

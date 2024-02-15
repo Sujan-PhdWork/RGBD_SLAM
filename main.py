@@ -37,13 +37,13 @@ K=np.array([[fx,0,cx],[0,fy,cy],[0,0,1]])
 
 
 #freiburg1_floor
-# Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
-#                     [-0.7960,    0.4055,   -0.4493,   -0.9763],
-#                     [-0.0001,    0.7423,    0.6701,    0.6837],
-#                      [      0,         0,         0,    1.0000]])
+Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
+                    [-0.7960,    0.4055,   -0.4493,   -0.9763],
+                    [-0.0001,    0.7423,    0.6701,    0.6837],
+                     [      0,         0,         0,    1.0000]])
 
 
-Int_pose=np.eye(4)
+# Int_pose=np.eye(4)
 
 mapp=Map()
 mapp.create_viewer()
@@ -55,12 +55,12 @@ mapp.create_viewer()
 # kf=Keyframes()
 # kf.create_Thread(mapp,th1)
 
-th2=0.58
-Loop=Loop_Thread()
-Loop.create_Thread(mapp,th2)
+# th2=0.6
+# Loop=Loop_Thread()
+# Loop.create_Thread(mapp,th2)
 
-GICP_T=GICP_Thread()
-GICP_T.create_Thread(mapp)
+# GICP_T=GICP_Thread()
+# GICP_T.create_Thread(mapp)
 
 
 
@@ -78,21 +78,31 @@ def process_img(img,depth):
     if (frame.id)==0:
         # Adding first frameas key frame 
         # mapp.keyframe=
-        GICP_T.gc.event.set()
-        Loop.lc.event.set()
-    
+        # GICP_T.gc.event.set()
+        # Loop.lc.event.set()
+        frame.pose=Int_pose
         mapp.keyframes.append(frame)
         return
     
     f_c=mapp.frames[-1] #current frame
     f_p=mapp.frames[-2] # previous frame
     
-    # R_pose=GICP(f_c.cloud,f_p.cloud)
     # print(R_pose)
     # GICP_T.gc.event.set()
     # finding the between consecutive frame 
     idx2,idx1,pose=match(f_c,f_p)
     f_c.pose=np.dot(pose,f_p.pose)
+    print(pose)
+    R=f_c.pose[:3,:3]
+    t=f_c.pose[:3,3]
+
+    # cloud=np.dot(R,f_c.cloud.T)+t.reshape(3,1)
+    # f_c.cloud=cloud.T
+
+
+    R_pose=GICP(f_c,f_p)
+    f_c.Rpose=np.dot(R_pose,f_p.Rpose)
+
 
     # print("3point",f_c.id,f_p.id,pose)
     # while True:
@@ -100,7 +110,7 @@ def process_img(img,depth):
     #             break
 
         
-    EDGE(mapp,f_p.id,f_c.id,pose,0.6)
+    # EDGE(mapp,f_p.id,f_c.id,pose,0.6)
     
 
     
@@ -170,7 +180,7 @@ def process_img(img,depth):
     disp(img,"RGB")
     disp(depth,"Depth")
     mapp.display()
-    mapp.optimize()
+    # mapp.optimize()
 
 
 def optimize_frame(mapp):
@@ -180,7 +190,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_floor_demo/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
@@ -188,7 +198,7 @@ if __name__ == "__main__":
     rgb_paths=dataset_path+'rgb.txt'
     ilist=data(rgb_paths)
 
-    Loop.lc.event.set()
+    # Loop.lc.event.set()
 
     for i in range(len(dlist)):
 

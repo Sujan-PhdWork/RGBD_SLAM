@@ -5,6 +5,7 @@ from threading import Thread,Lock,Event
 from pointmap import EDGE
 from time import sleep
 import cv2
+from GICP_test import GICP
 
 
 
@@ -87,8 +88,11 @@ def loop_closure(mapp,th):
         # N=(N1+N2+N3)/3.0
 
         if (N1/N)>=th:
-            idx2,idx1,pose=match(f1,f)
-            EDGE(mapp,f.id,f1.id,pose,4)
+            # idx2,idx1,pose=match(f1,f)
+            cloud1=f1.cloud
+            cloud2=f.cloud
+            pose=GICP(cloud1,cloud2)
+            EDGE(mapp,f1.id,f.id,pose,2)
             print(f.id," : ", (N1/N))
         
         

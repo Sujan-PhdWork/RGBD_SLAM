@@ -18,10 +18,10 @@ class Map(object):
     
 
     def optimize(self):
-        opt=g2o.SparseOptimizer()
+        self.opt=g2o.SparseOptimizer()
         solver = g2o.BlockSolverSE3(g2o.LinearSolverCholmodSE3())
         solver = g2o.OptimizationAlgorithmLevenberg(solver)
-        opt.set_algorithm(solver)
+        self.opt.set_algorithm(solver)
 
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
         
@@ -37,32 +37,32 @@ class Map(object):
             
             v_se3.set_estimate(pcam)
             v_se3.set_fixed(f.id==0)
-            opt.add_vertex(v_se3)
+            self.opt.add_vertex(v_se3)
 
         for edge in self.edges:
             f1,f2,noise=edge.frames
             pose=edge.pose
             Eg= g2o.EdgeSE3()
-            Eg.set_vertex(0,opt.vertex(f1.id))
-            Eg.set_vertex(1,opt.vertex(f2.id))
+            Eg.set_vertex(0,self.opt.vertex(f1.id))
+            Eg.set_vertex(1,self.opt.vertex(f2.id))
             scam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
             Eg.set_measurement(scam)
             Eg.set_information(noise*np.eye(6))
             Eg.set_robust_kernel(robust_kernel)
-            opt.add_edge(Eg)
+            self.opt.add_edge(Eg)
 
 
-        opt.initialize_optimization()
-        opt.compute_active_errors()
+        self.opt.initialize_optimization()
+        self.opt.compute_active_errors()
         # print('Initial chi2 =', opt.chi2())
 
         # opt.save('gicp.g2o')
 
-        opt.set_verbose(False)
-        opt.optimize(100)
+        self.opt.set_verbose(False)
+        self.opt.optimize(100)
 
         for f in self.frames:
-            est = opt.vertex(f.id).estimate()
+            est = self.opt.vertex(f.id).estimate()
             R = est.rotation().matrix()
             t = est.translation()
             ret=np.eye(4)
