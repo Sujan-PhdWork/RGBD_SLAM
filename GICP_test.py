@@ -50,20 +50,12 @@ def GICP(f_p,f_c):
     #cloud1: current frame cloud data
     #cloud2: previous frame cloud data
 
-    print(f_p.id,f_c.id)
+    # print(f_p.id,f_c.id)
     cloud_p=f_p.cloud.copy()
     cloud_c=f_c.cloud.copy()
     
     
     poses=[np.eye(4),np.dot(f_c.pose,np.linalg.inv(f_p.pose))]
-    # poses=[np.eye(4),np.eye(4)]
-    # rad=30*np.pi/180.0
-
-    # poses[1]=np.dot(np.array([[np.cos(rad),-np.sin(rad),0,.01],
-    #                           [np.sin(rad),np.cos(rad),0,.01],
-    #                           [0,   0,  1,  0],
-    #                           [0,   0,  0,   1]]),
-    #                           np.eye(4))
     
     pose=poses[1]
     # prior_pose=pose.copy()
@@ -71,38 +63,12 @@ def GICP(f_p,f_c):
     R= pose[:3,:3]
     # print(pose)
     cloud_c=np.dot(R,cloud_c.T)+t.reshape(3,1)
-    cloud_c=cloud_c.T
-
-    
-    pltcloud_p = pcl.PointCloud()
-    pltcloud_p.from_array(cloud_p.astype(np.float32))
-    viewer.AddPointCloud(pltcloud_p,b"cloud_prior")
-    # viewer.AddPointCloud(pltcloud2,b"cloud2",1)
-    
-
-    pltcloud_prior = pcl.PointCloud()
-    pltcloud_prior.from_array(cloud_c.astype(np.float32))
-    pccolor = pcl.pcl_visualization.PointCloudColorHandleringCustom(pltcloud_prior, 255,123,200)
-    # viewer.AddPointCloud(pltcloud_c,bytes(str(j),encoding='utf8'))
-    viewer.AddPointCloud_ColorHandler(pltcloud_prior, pccolor, bytes('prior',encoding='utf8'))
-    
-
-
-    j=1 
-    pltcloud_c = pcl.PointCloud()
-    pltcloud_c.from_array(cloud_c.astype(np.float32))
-    pccolor = pcl.pcl_visualization.PointCloudColorHandleringCustom(pltcloud_c, 255,0,0)
-    # viewer.AddPointCloud(pltcloud_c,bytes(str(j),encoding='utf8'))
-    viewer.AddPointCloud_ColorHandler(pltcloud_c, pccolor, bytes(str(j),encoding='utf8'))
-    
-    viewer.SpinOnce()
-    sleep(5)   
+    cloud_c=cloud_c.T 
     final_pose=poses[1]
-    print(final_pose)
-    # t_test=opt.vertex(1).estimate().t
+    # print(final_pose)
     
     kdt=KDTree(cloud_p)
-    for j in range(2,100):
+    for j in range(2,10):
         # print(j)
         viewer.RemovePointCloud(bytes(str(j-1),encoding='utf8'),0)
 
@@ -125,7 +91,7 @@ def GICP(f_p,f_c):
             
             opt.add_vertex(vc)
 
-        idx=np.random.choice(cloud_c.shape[0], 500, replace=False)    
+        idx=np.random.choice(cloud_c.shape[0], 5000, replace=False)    
         sampled_cloudC = cloud_c[idx,:]
         dist, indices = kdt.query(sampled_cloudC,k=1,p=2,distance_upper_bound=0.1)
         
@@ -149,10 +115,6 @@ def GICP(f_p,f_c):
 
         opt.initialize_optimization()
         opt.compute_active_errors()
-    #     # if verbose:
-        # print('GICP Initial chi2 =', opt.chi2())
-
-        # opt.set_verbose(True)
         opt.optimize(5)
   
         vc = opt.vertex(1)
@@ -170,45 +132,12 @@ def GICP(f_p,f_c):
         T[:3,3]=vc.estimate().t
 
         final_pose=np.dot(T,final_pose)
-
-        # print('prior',prior_pose)
-        # print('GICP',T)
-
         poses[1]=T
 
         cloud_c=np.dot(vc.estimate().R,cloud_c.T)+vc.estimate().t.reshape(3,1)
         cloud_c=cloud_c.T
         
-        
-        pltcloud3 = pcl.PointCloud()
-        pltcloud3.from_array(cloud_c.astype(np.float32))
-        
-        pccolor = pcl.pcl_visualization.PointCloudColorHandleringCustom(pltcloud3, 255,0,0)
-        # viewer.AddPointCloud(pltcloud_c,bytes(str(j),encoding='utf8'))
-        viewer.AddPointCloud_ColorHandler(pltcloud3, pccolor, bytes(str(j),encoding='utf8'))
-
-        # viewer.AddPointCloud(pltcloud3,bytes(str(j),encoding='utf8'))
-        viewer.SpinOnce()
-        # sleep(0.1) 
-        
-    # poses
-    
-    T=final_pose.copy()
-
-    cloud_3=np.dot(T[:3,:3],f_c.cloud.T)+T[:3,3].reshape(3,1)
-    cloud_3=cloud_3.T
-        
-    pltcloud_last = pcl.PointCloud()
-    pltcloud_last.from_array(cloud_3.astype(np.float32))
-        
-    pccolor = pcl.pcl_visualization.PointCloudColorHandleringCustom(pltcloud3, 0,255,0)
-        # viewer.AddPointCloud(pltcloud_c,bytes(str(j),encoding='utf8'))
-    viewer.AddPointCloud_ColorHandler(pltcloud_last, pccolor, bytes('final',encoding='utf8'))
-
-        # viewer.AddPointCloud(pltcloud3,bytes(str(j),encoding='utf8'))
-    print(final_pose)
-    viewer.Spin()
-    return np.linalg.inv(final_pose)
+    return final_pose.copy()
 
 
 class GICP_Thread(object):

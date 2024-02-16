@@ -88,11 +88,9 @@ def loop_closure(mapp,th):
         # N=(N1+N2+N3)/3.0
 
         if (N1/N)>=th:
-            # idx2,idx1,pose=match(f1,f)
-            cloud1=f1.cloud
-            cloud2=f.cloud
-            pose=GICP(cloud1,cloud2)
-            EDGE(mapp,f1.id,f.id,pose,2)
+            _,_,pose=match(f1,f)
+            # pose=GICP(f,f1)
+            EDGE(mapp,f.id,f1.id,pose,0.6)
             print(f.id," : ", (N1/N))
         
         

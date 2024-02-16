@@ -57,9 +57,9 @@ mapp.create_viewer()
 # kf=Keyframes()
 # kf.create_Thread(mapp,th1)
 
-# th2=0.6
-# Loop=Loop_Thread()
-# Loop.create_Thread(mapp,th2)
+th2=0.65
+Loop=Loop_Thread()
+Loop.create_Thread(mapp,th2)
 
 # GICP_T=GICP_Thread()
 # GICP_T.create_Thread(mapp)
@@ -81,7 +81,7 @@ def process_img(img,depth):
         # Adding first frameas key frame 
         # mapp.keyframe=
         # GICP_T.gc.event.set()
-        # Loop.lc.event.set()
+        Loop.lc.event.set()
         frame.pose=Int_pose
         frame.Rpose=Int_pose
         mapp.keyframes.append(frame)
@@ -94,7 +94,7 @@ def process_img(img,depth):
     # GICP_T.gc.event.set()
     # finding the between consecutive frame 
     idx2,idx1,pose=match(f_c,f_p)
-    print(pose[:3,3])
+    # print(pose[:3,3])
     f_c.pose=np.dot(pose,f_p.pose)
     
    
@@ -104,8 +104,12 @@ def process_img(img,depth):
 
     # if frame.id % 5==0:
     R_pose=GICP(mapp.frames[-2],mapp.frames[-1])
-    print('GICP',R_pose[:3,3])
+    # print('GICP',R_pose[:3,3])
     f_c.pose=np.dot(R_pose,f_p.pose)
+    # EDGE(mapp,f_p.id,f_c.id,R_pose,1)
+    # else:
+    #     EDGE(mapp,f_p.id,f_c.id,pose,1)
+
 
 
     # print("3point",f_c.id,f_p.id,pose)
