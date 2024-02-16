@@ -74,7 +74,9 @@ def GICP(f_c,f_p):
     j=1 
     pltcloud_c = pcl.PointCloud()
     pltcloud_c.from_array(cloud_c.astype(np.float32))
-    viewer.AddPointCloud(pltcloud_c,bytes(str(j),encoding='utf8'))
+    pccolor = pcl.pcl_visualization.PointCloudColorHandleringCustom(pltcloud_c, 255,0,0)
+    # viewer.AddPointCloud(pltcloud_c,bytes(str(j),encoding='utf8'))
+    viewer.AddPointCloud_ColorHandler(pltcloud_c, pccolor, bytes(str(j),encoding='utf8'))
     viewer.SpinOnce()
     sleep(5)   
             
@@ -157,9 +159,12 @@ def GICP(f_c,f_p):
         
         pltcloud3 = pcl.PointCloud()
         pltcloud3.from_array(cloud_c.astype(np.float32))
+        
+        pccolor = pcl.pcl_visualization.PointCloudColorHandleringCustom(pltcloud3, 255,0,0)
+        # viewer.AddPointCloud(pltcloud_c,bytes(str(j),encoding='utf8'))
+        viewer.AddPointCloud_ColorHandler(pltcloud3, pccolor, bytes(str(j),encoding='utf8'))
 
-
-        viewer.AddPointCloud(pltcloud3,bytes(str(j),encoding='utf8'))
+        # viewer.AddPointCloud(pltcloud3,bytes(str(j),encoding='utf8'))
         viewer.SpinOnce()
         sleep(0.1) 
         

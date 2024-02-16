@@ -100,8 +100,8 @@ def process_img(img,depth):
     # f_c.cloud=cloud.T
 
 
-    R_pose=GICP(f_c,f_p)
-    f_c.Rpose=np.dot(R_pose,f_p.Rpose)
+    # R_pose=GICP(f_c,f_p)
+    # f_c.Rpose=np.dot(R_pose,f_p.Rpose)
 
 
     # print("3point",f_c.id,f_p.id,pose)
@@ -190,7 +190,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_floor_demo/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)

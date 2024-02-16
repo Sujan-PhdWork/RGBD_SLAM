@@ -18,7 +18,8 @@ def extractRt(model):
     c=model.params['c']
 
     pose=np.eye(4)
-    pose[:3,:3]=c*R
+    u,s,vh = np.linalg.svd(c*R)
+    pose[:3,:3]=u @ vh
     pose[:3,3]=t.reshape(3)
 
     return pose
