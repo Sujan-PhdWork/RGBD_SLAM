@@ -8,13 +8,15 @@ from pointmap import Map,EDGE
 from GICP_test import GICP,GICP_Thread
 from loop_closure import Loop_Thread
 from threading import Thread,Lock
+import pcl.pcl_visualization
+import pcl
 
 # from keyframe import Keyframes
 # from  local_mapping import local_mapping  
 
 
 
-
+# viewer = pcl.pcl_visualization.PCLVisualizering()
 np.set_printoptions(suppress=True)
 
 W,H=640,480
@@ -81,6 +83,7 @@ def process_img(img,depth):
         # GICP_T.gc.event.set()
         # Loop.lc.event.set()
         frame.pose=Int_pose
+        frame.Rpose=Int_pose
         mapp.keyframes.append(frame)
         return
     
@@ -91,17 +94,18 @@ def process_img(img,depth):
     # GICP_T.gc.event.set()
     # finding the between consecutive frame 
     idx2,idx1,pose=match(f_c,f_p)
+    print(pose[:3,3])
     f_c.pose=np.dot(pose,f_p.pose)
-    print(pose)
-    R=f_c.pose[:3,:3]
-    t=f_c.pose[:3,3]
+    
+   
 
     # cloud=np.dot(R,f_c.cloud.T)+t.reshape(3,1)
     # f_c.cloud=cloud.T
 
-
-    # R_pose=GICP(f_c,f_p)
-    # f_c.Rpose=np.dot(R_pose,f_p.Rpose)
+    # if frame.id % 5==0:
+    R_pose=GICP(mapp.frames[-2],mapp.frames[-1])
+    print('GICP',R_pose[:3,3])
+    f_c.pose=np.dot(R_pose,f_p.pose)
 
 
     # print("3point",f_c.id,f_p.id,pose)
@@ -110,7 +114,9 @@ def process_img(img,depth):
     #             break
 
         
-    # EDGE(mapp,f_p.id,f_c.id,pose,0.6)
+    # EDGE(mapp,f_p.id,f_c.id,pose,0.1)
+    # EDGE(mapp,f_p.id,f_c.id,R_pose,1)
+
     
 
     
@@ -165,6 +171,20 @@ def process_img(img,depth):
     # print("current keyframe id",mapp.keyframes[-1].id)
     
     
+    # R=f_c.pose[:3,:3]
+    # t=f_c.pose[:3,3]
+    # cloud_c=np.dot(frame.cloud,f_c.pose[:3,:3])+f_c.pose[:3,3]
+
+    # pltcloud = pcl.PointCloud()
+    # pltcloud.from_array(cloud_c.astype(np.float32))
+        
+    # # pccolor = pcl.pcl_visualization.PointCloudColorHandleringCustom(pltcloud3, 255,0,0)
+    # viewer.AddPointCloud(pltcloud,bytes(str(frame.id),encoding='utf8'))
+    # # viewer.AddPointCloud_ColorHandler(pltcloud3, pccolor, bytes(str(j),encoding='utf8'))
+
+    # # # viewer.AddPointCloud(pltcloud3,bytes(str(j),encoding='utf8'))
+    # viewer.SpinOnce()
+
 
     # displaying features on RGB image
     for kp1,kp2 in zip(f_p.kps[idx1],f_c.kps[idx2]):
