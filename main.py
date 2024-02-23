@@ -57,6 +57,7 @@ mapp.create_viewer()
 # # Computing keyframe
 Local_map=LocalMap_Thread()
 Local_map.create_Thread(mapp)
+kFrame=None
 
 # th2=0.65
 # Loop=Loop_Thread()
@@ -71,7 +72,7 @@ Local_map.create_Thread(mapp)
 
 
 def process_img(img,depth):
-    
+    global kFrame
     # GICP_T.gc.event.set()
     # Loop.lc.event.set()
         
@@ -81,19 +82,21 @@ def process_img(img,depth):
     
     mapp.frames.append(frame)
  
-
+    # print(1)
     if (frame.id)==0:
+        # print(2)
         # Adding first frameas key frame 
         # mapp.keyframe=
         # GICP_T.gc.event.set()
         # Loop.lc.event.set()
         frame.pose=Int_pose
         frame.Rpose=Int_pose
-        mapp.keyframes.append(Keyframe(frame))
+        # mapp.keyframes.append(Keyframe(frame))
+        kFrame=Keyframe(frame)
         return
     
 
-    kFrame=mapp.keyframes[-1]
+   
     
     # print(kFrame.pose)
     
@@ -107,6 +110,15 @@ def process_img(img,depth):
     Kidx2,Kidx1,Kpose=match(f_c,kFrame.frame)
     # print(Local_map.lm.Acceptance_flag)
     # Take the next frame as an reference for ratio
+    
+   
+        # flag=Local_map.lm.Acceptance_flag
+        # print(flag)
+
+    if mapp.keyframes:
+        print("Keyframe ID: ",mapp.keyframes[-1].id)
+
+
     if (frame.id-kFrame.id)==1:
         f_c.pose=Kpose
         kFrame.add_frames(f_c)
@@ -123,12 +135,14 @@ def process_img(img,depth):
         # f_c.pose=np.dot()
         M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
         if (M_ratio<0.7) and (flag):
-            Local_map.lm.CheckNewKeyframe=True
-            Newkeyframe=Keyframe(f_c)
-            Newkeyframe.pose=np.dot(Kpose,kFrame.pose)
+            # Local_map.lm.CheckNewKeyframe=True
+            with Lock():
+                Local_map.lm.NewKeyframes.append(kFrame)
+            kFrame=Keyframe(f_c)
+            kFrame.pose=np.dot(Kpose,kFrame.pose)
 
             # EDGE(mapp,kFrame.id,Newkeyframe.id,Kpose,1)
-            mapp.keyframes.append(Newkeyframe)
+            # mapp.keyframes.append(Newkeyframe)
 
         
 

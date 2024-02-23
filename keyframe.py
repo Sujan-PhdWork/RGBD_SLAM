@@ -23,7 +23,8 @@ class LocalMAP(Thread):
         self.daemon=True
         self.Acceptance_flag=True
         self.event=Event()
-        self.CheckNewKeyframe=False
+        # self.CheckNewKeyframe=False
+        self.NewKeyframes=[]
     
 
 
@@ -31,12 +32,20 @@ class LocalMAP(Thread):
     def SetAcceptKeyFrames(self,flag):
         self.Acceptance_flag=flag
     
+    def CheckNewKeyframe(self):
+        return self.NewKeyframes
+    
+    
     def Process_newKeyframe(self):
         with self.lock:
-            self.Keyframe=self.mapp.keyframes[-1]
+
+            self.Keyframe=self.NewKeyframes[0]
             self.Current_Keyframe=copy.deepcopy(self.Keyframe)
-        self.optimize_initialize()
+            self.NewKeyframes.pop()
         
+        
+        self.optimize_initialize()
+        print("enter")
         
         for i in range(len(self.Current_Keyframe.frames)):
             pose=self.Current_Keyframe.frames[i].pose
@@ -100,12 +109,12 @@ class LocalMAP(Thread):
 
         while True:
             # sleep(3)
-            if self.CheckNewKeyframe:
-                self.CheckNewKeyframe=False
-                print(1)
+            if self.CheckNewKeyframe():
+                # print(1)
                 self.SetAcceptKeyFrames(False)
                 self.Process_newKeyframe()
                 self.optimize()
+                self.mapp.keyframes.append(self.Keyframe)
                 self.SetAcceptKeyFrames(True)
             else:
                 sleep(0.5)
