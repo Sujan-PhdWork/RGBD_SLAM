@@ -2,7 +2,8 @@
 import cv2
 import numpy as np
 from utils import *
-from frame import match,Frame,Keyframes
+from frame import match,Frame
+from keyframe import Keyframe,LocalMap_Thread
 # import g2o
 from pointmap import Map,EDGE
 from GICP_test import GICP,GICP_Thread
@@ -54,15 +55,18 @@ mapp.create_viewer()
 # th1=900.0
 
 # # Computing keyframe
-# kf=Keyframes()
-# kf.create_Thread(mapp,th1)
+Local_map=LocalMap_Thread()
+Local_map.create_Thread(mapp)
 
-th2=0.65
-Loop=Loop_Thread()
-Loop.create_Thread(mapp,th2)
+# th2=0.65
+# Loop=Loop_Thread()
+# Loop.create_Thread(mapp,th2)
 
 # GICP_T=GICP_Thread()
 # GICP_T.create_Thread(mapp)
+
+
+
 
 
 
@@ -74,6 +78,7 @@ def process_img(img,depth):
     # creating frame object
     frame=Frame(mapp,img,depth,K)
     
+    
     mapp.frames.append(frame)
  
 
@@ -81,21 +86,69 @@ def process_img(img,depth):
         # Adding first frameas key frame 
         # mapp.keyframe=
         # GICP_T.gc.event.set()
-        Loop.lc.event.set()
+        # Loop.lc.event.set()
         frame.pose=Int_pose
         frame.Rpose=Int_pose
-        mapp.keyframes.append(frame)
+        mapp.keyframes.append(Keyframe(frame))
         return
     
-    f_c=mapp.frames[-1] #current frame
-    f_p=mapp.frames[-2] # previous frame
+
+    kFrame=mapp.keyframes[-1]
     
-    # print(R_pose)
-    # GICP_T.gc.event.set()
-    # finding the between consecutive frame 
+    # print(kFrame.pose)
+    
+    f_c=mapp.frames[-1] #Current frame
+    f_p=mapp.frames[-2] # Previous frame
+
+
+    
+
+    #Matching between current_frame and keyframe
+    Kidx2,Kidx1,Kpose=match(f_c,kFrame.frame)
+    # print(Local_map.lm.Acceptance_flag)
+    # Take the next frame as an reference for ratio
+    if (frame.id-kFrame.id)==1:
+        f_c.pose=Kpose
+        kFrame.add_frames(f_c)
+        # print(kFrame.id)
+        kFrame.nmpts=len(Kidx1)
+    
+    else:
+        with Lock():
+            flag=Local_map.lm.Acceptance_flag
+            print(flag)
+        _,_,pose=match(f_c,f_p)
+        f_c.pose=np.dot(pose,f_p.pose)
+        kFrame.add_frames(f_c)
+        # f_c.pose=np.dot()
+        M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
+        if (M_ratio<0.7) and (flag):
+            Local_map.lm.CheckNewKeyframe=True
+            Newkeyframe=Keyframe(f_c)
+            Newkeyframe.pose=np.dot(Kpose,kFrame.pose)
+
+            # EDGE(mapp,kFrame.id,Newkeyframe.id,Kpose,1)
+            mapp.keyframes.append(Newkeyframe)
+
+        
+
+    
+
+    
+        
+
+
+    
+
+
+    
+
+
+
+    
     idx2,idx1,pose=match(f_c,f_p)
-    # print(pose[:3,3])
-    f_c.pose=np.dot(pose,f_p.pose)
+    # # print(pose[:3,3])
+    # f_c.pose=np.dot(pose,f_p.pose)
     
    
 
@@ -103,9 +156,9 @@ def process_img(img,depth):
     # f_c.cloud=cloud.T
 
     # if frame.id % 5==0:
-    R_pose=GICP(mapp.frames[-2],mapp.frames[-1])
+    # R_pose=GICP(mapp.frames[-2],mapp.frames[-1])
     # print('GICP',R_pose[:3,3])
-    f_c.pose=np.dot(R_pose,f_p.pose)
+    # f_c.pose=np.dot(R_pose,f_p.pose)
     # EDGE(mapp,f_p.id,f_c.id,R_pose,1)
     # else:
     #     EDGE(mapp,f_p.id,f_c.id,pose,1)
@@ -136,8 +189,8 @@ def process_img(img,depth):
     # pose-> relative transformation of current frame  
     # with respect to previous frame 
 
-    assert len(idx1)>0
-    assert len(idx2)>0
+    # assert len(idx1)>0
+    # assert len(idx2)>0
     
     # if pose is None:
     # return
@@ -201,8 +254,8 @@ def process_img(img,depth):
 
     
     
-    disp(img,"RGB")
-    disp(depth,"Depth")
+    # disp(img,"RGB")
+    # disp(depth,"Depth")
     mapp.display()
     # mapp.optimize()
 

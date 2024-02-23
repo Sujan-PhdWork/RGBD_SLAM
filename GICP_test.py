@@ -10,7 +10,6 @@ from time import sleep
 
 
 #visual = pcl.pcl_visualization.CloudViewing()
-viewer = pcl.pcl_visualization.PCLVisualizering()
 class GICPThread(Thread):
     def __init__(self,mapp,lock):
         Thread.__init__(self)
@@ -70,7 +69,6 @@ def GICP(f_p,f_c):
     kdt=KDTree(cloud_p)
     for j in range(2,10):
         # print(j)
-        viewer.RemovePointCloud(bytes(str(j-1),encoding='utf8'),0)
 
         
         

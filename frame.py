@@ -176,11 +176,6 @@ class Frame(object):
 
 
 
-class Keyframes(object):
-    def __init__(self,frame,mapp):
-        self.frame=frame
-        print(frame)
-        mapp.keyframes.append(self)
-        
+
 
 
