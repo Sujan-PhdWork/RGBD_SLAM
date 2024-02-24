@@ -89,7 +89,7 @@ def GICP(f_p,f_c):
             
             opt.add_vertex(vc)
 
-        idx=np.random.choice(cloud_c.shape[0], 5000, replace=False)    
+        idx=np.random.choice(cloud_c.shape[0], 500, replace=False)    
         sampled_cloudC = cloud_c[idx,:]
         dist, indices = kdt.query(sampled_cloudC,k=1,p=2,distance_upper_bound=0.1)
         

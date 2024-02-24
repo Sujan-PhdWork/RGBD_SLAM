@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 from utils import *
 from frame import match,Frame
-from keyframe import Keyframe,LocalMap_Thread
+from keyframe import Keyframe
+from Local_Mapping import LocalMap_Thread
 # import g2o
 from pointmap import Map,EDGE
 from GICP_test import GICP,GICP_Thread
@@ -11,6 +12,7 @@ from loop_closure import Loop_Thread
 from threading import Thread,Lock
 import pcl.pcl_visualization
 import pcl
+from Full_map import FulllMap_Thread
 
 # from keyframe import Keyframes
 # from  local_mapping import local_mapping  
@@ -59,9 +61,15 @@ Local_map=LocalMap_Thread()
 Local_map.create_Thread(mapp)
 kFrame=None
 
+Full_MAP=FulllMap_Thread()
+Full_MAP.create_Thread(mapp)
+# kFrame=None
+
 # th2=0.65
 # Loop=Loop_Thread()
 # Loop.create_Thread(mapp,th2)
+
+
 
 # GICP_T=GICP_Thread()
 # GICP_T.create_Thread(mapp)
@@ -92,6 +100,7 @@ def process_img(img,depth):
         frame.pose=Int_pose
         frame.Rpose=Int_pose
         # mapp.keyframes.append(Keyframe(frame))
+        frame.isKey=True
         kFrame=Keyframe(frame)
         return
     
@@ -108,19 +117,20 @@ def process_img(img,depth):
 
     #Matching between current_frame and keyframe
     Kidx2,Kidx1,Kpose=match(f_c,kFrame.frame)
-    # print(Local_map.lm.Acceptance_flag)
-    # Take the next frame as an reference for ratio
     
+    #initialize pose of each frame
+    idx2,idx1,pose=match(f_c,f_p)
+
+    f_c.pose=np.dot(pose,f_p.pose)
    
-        # flag=Local_map.lm.Acceptance_flag
-        # print(flag)
 
     if mapp.keyframes:
         print("Keyframe ID: ",mapp.keyframes[-1].id)
 
+    # Take the next frame as an reference for ratio
 
     if (frame.id-kFrame.id)==1:
-        f_c.pose=Kpose
+        # f_c.pose=Kpose
         kFrame.add_frames(f_c)
         # print(kFrame.id)
         kFrame.nmpts=len(Kidx1)
@@ -128,22 +138,30 @@ def process_img(img,depth):
     else:
         with Lock():
             flag=Local_map.lm.Acceptance_flag
-            print(flag)
-        _,_,pose=match(f_c,f_p)
-        f_c.pose=np.dot(pose,f_p.pose)
-        kFrame.add_frames(f_c)
-        # f_c.pose=np.dot()
+            # print(mapp.frames[2].pose)
+        # _,_,pose=match(f_c,f_p)
+        
+        
+        
+        
         M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
-        if (M_ratio<0.7) and (flag):
+        
+        if (M_ratio<0.4) and (flag):
             # Local_map.lm.CheckNewKeyframe=True
             with Lock():
                 Local_map.lm.NewKeyframes.append(kFrame)
+            
+            f_c.isKey=True
+            EDGE(mapp,kFrame.id,f_c.id,Kpose,1)
+            # if len(mapp.keyframes)>2:
+            #     mapp.optimize()
             kFrame=Keyframe(f_c)
-            kFrame.pose=np.dot(Kpose,kFrame.pose)
+            # kFrame.pose=np.dot(Kpose,kFrame.pose)
 
             # EDGE(mapp,kFrame.id,Newkeyframe.id,Kpose,1)
             # mapp.keyframes.append(Newkeyframe)
-
+        else:
+            kFrame.add_frames(f_c)
         
 
     
@@ -160,7 +178,7 @@ def process_img(img,depth):
 
 
     
-    idx2,idx1,pose=match(f_c,f_p)
+    # idx2,idx1,pose=match(f_c,f_p)
     # # print(pose[:3,3])
     # f_c.pose=np.dot(pose,f_p.pose)
     
@@ -268,8 +286,9 @@ def process_img(img,depth):
 
     
     
-    # disp(img,"RGB")
-    # disp(depth,"Depth")
+    disp(img,"RGB")
+    disp(depth,"Depth")
+    # frame.id>20:
     mapp.display()
     # mapp.optimize()
 

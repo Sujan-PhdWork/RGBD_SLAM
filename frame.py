@@ -171,7 +171,7 @@ class Frame(object):
         self.pose=IRt
         self.Rpose=IRt
         self.id=len(mapp.frames)
-        self.keyid=None
+        self.isKey=False
         
 
 

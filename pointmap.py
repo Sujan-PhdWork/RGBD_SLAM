@@ -26,17 +26,19 @@ class Map(object):
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
         
         #
-        
+        for k in self.keyframes:
+            print(k.id)
 
-        for f in self.frames:
-            pose=f.pose
+        for k in self.keyframes:
+            pose=k.frame.pose
             v_se3=g2o.VertexSE3()
-            v_se3.set_id(f.id)
+            v_se3.set_id(k.frame.id)
 
             pcam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
             
             v_se3.set_estimate(pcam)
-            v_se3.set_fixed(f.id==0)
+            v_se3.set_fixed(k.frame.id==0)
+            print("In main:",k.frame.id,len(k.frames))
             self.opt.add_vertex(v_se3)
 
         for edge in self.edges:
@@ -61,15 +63,15 @@ class Map(object):
         self.opt.set_verbose(False)
         self.opt.optimize(100)
 
-        for f in self.frames:
-            est = self.opt.vertex(f.id).estimate()
-            R = est.rotation().matrix()
-            t = est.translation()
+        for k in self.keyframes:
+            Iest = self.opt.vertex(k.frame.id).estimate()
             ret=np.eye(4)
-            ret[:3,:3]=R
-            ret[:3,3]=t
+            ret[:3,:3]=Iest.rotation().matrix()
+            ret[:3,3]=t = Iest.translation()
             # print(t)
-            f.pose = ret.copy()
+            R_pose=np.dot(ret,np.linalg.inv(k.frame.pose))
+            k.update_frames(R_pose)
+            k.frame.pose = ret.copy()
 
 
 
@@ -82,6 +84,7 @@ class Map(object):
 
     def display(self):
         poses,R_poses=[],[]
+        # for k in self.keyframes:
         for f in self.frames:
             poses.append(f.pose)
         for f in self.frames:
