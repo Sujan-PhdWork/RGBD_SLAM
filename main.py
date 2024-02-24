@@ -65,9 +65,9 @@ Full_MAP=FulllMap_Thread()
 Full_MAP.create_Thread(mapp)
 # kFrame=None
 
-# th2=0.65
-# Loop=Loop_Thread()
-# Loop.create_Thread(mapp,th2)
+th2=0.7
+Loop=Loop_Thread()
+Loop.create_Thread(mapp,th2)
 
 
 
@@ -96,7 +96,7 @@ def process_img(img,depth):
         # Adding first frameas key frame 
         # mapp.keyframe=
         # GICP_T.gc.event.set()
-        # Loop.lc.event.set()
+        Loop.lc.event.set()
         frame.pose=Int_pose
         frame.Rpose=Int_pose
         # mapp.keyframes.append(Keyframe(frame))
@@ -125,7 +125,7 @@ def process_img(img,depth):
    
 
     if mapp.keyframes:
-        print("Keyframe ID: ",mapp.keyframes[-1].id)
+        print("Keyframe ID: ",len(mapp.keyframes))
 
     # Take the next frame as an reference for ratio
 
@@ -146,7 +146,7 @@ def process_img(img,depth):
         
         M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
         
-        if (M_ratio<0.4) and (flag):
+        if (M_ratio<0.5) and (flag):
             # Local_map.lm.CheckNewKeyframe=True
             with Lock():
                 Local_map.lm.NewKeyframes.append(kFrame)
@@ -164,115 +164,6 @@ def process_img(img,depth):
             kFrame.add_frames(f_c)
         
 
-    
-
-    
-        
-
-
-    
-
-
-    
-
-
-
-    
-    # idx2,idx1,pose=match(f_c,f_p)
-    # # print(pose[:3,3])
-    # f_c.pose=np.dot(pose,f_p.pose)
-    
-   
-
-    # cloud=np.dot(R,f_c.cloud.T)+t.reshape(3,1)
-    # f_c.cloud=cloud.T
-
-    # if frame.id % 5==0:
-    # R_pose=GICP(mapp.frames[-2],mapp.frames[-1])
-    # print('GICP',R_pose[:3,3])
-    # f_c.pose=np.dot(R_pose,f_p.pose)
-    # EDGE(mapp,f_p.id,f_c.id,R_pose,1)
-    # else:
-    #     EDGE(mapp,f_p.id,f_c.id,pose,1)
-
-
-
-    # print("3point",f_c.id,f_p.id,pose)
-    # while True:
-    #         if not GICP_T.gc.event.isSet():
-    #             break
-
-        
-    # EDGE(mapp,f_p.id,f_c.id,pose,0.1)
-    # EDGE(mapp,f_p.id,f_c.id,R_pose,1)
-
-    
-
-    
-    # f_c.Rpose=np.dot(R_pose,f_p.Rpose)
-    # EDGE(mapp,f_p.id,f_c.id,R_pose)
-
-    
-    
-    
-    #0 idx1-> id of the keypoint in previous frame
-    # idx2-> id of the keypoint in current frame
-    
-    # pose-> relative transformation of current frame  
-    # with respect to previous frame 
-
-    # assert len(idx1)>0
-    # assert len(idx2)>0
-    
-    # if pose is None:
-    # return
-    
-    # Main function is now bottelneck
-
-    # if frame.id %10 ==0:
-    #     # print(frame.id)
-    #     local_frames=[f.id for f in mapp.keyframes]
-    #     print(local_frames)
-    #     # kf.kf.event.set()
-        
-    
-    # 
-
-    # if frame.id %100 ==0
-
-
-    
-    
-
-
-        # kf.kf.event.clear()
-        
-    # if not kf.kf.event.isSet():
-    # local_mapping(kf.kf.submap) 
-   
-    
-    #creating a edge between consecutive frame
-    # f_c.pose=np.dot(pose,f_p.pose) 
-    # EDGE(mapp,f_p.id,f_c.id,pose)
-    
-    
-    
-    # print("current keyframe id",mapp.keyframes[-1].id)
-    
-    
-    # R=f_c.pose[:3,:3]
-    # t=f_c.pose[:3,3]
-    # cloud_c=np.dot(frame.cloud,f_c.pose[:3,:3])+f_c.pose[:3,3]
-
-    # pltcloud = pcl.PointCloud()
-    # pltcloud.from_array(cloud_c.astype(np.float32))
-        
-    # # pccolor = pcl.pcl_visualization.PointCloudColorHandleringCustom(pltcloud3, 255,0,0)
-    # viewer.AddPointCloud(pltcloud,bytes(str(frame.id),encoding='utf8'))
-    # # viewer.AddPointCloud_ColorHandler(pltcloud3, pccolor, bytes(str(j),encoding='utf8'))
-
-    # # # viewer.AddPointCloud(pltcloud3,bytes(str(j),encoding='utf8'))
-    # viewer.SpinOnce()
 
 
     # displaying features on RGB image
@@ -300,7 +191,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)

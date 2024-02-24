@@ -108,4 +108,5 @@ class EDGE(object):
         # print ("Adding edge between",f1.id,f2.id)
         self.frames=[f1,f2,noise]
         self.pose=pose
+        self.id=len(mapp.edges)
         mapp.edges.append(self)

@@ -63,7 +63,7 @@ class FullMAP(Thread):
 
             # opt.save('gicp.g2o')
 
-            self.opt.set_verbose(False)
+            self.opt.set_verbose(True)
             self.opt.optimize(100)
 
             with self.lock:
@@ -91,12 +91,18 @@ class FullMAP(Thread):
                 if self.nKframes>1:
                     # print(1)
                     self.optimize()
+                    del self.tkeyframes
+                    del self.opt
                     # self.Keyframe.update_frames()
                     # sleep(0.5)
                 else:
+                    del self.tkeyframes
                     sleep(0.5)
+            
+            
             else:
-                 sleep(0.5)
+                del self.tkeyframes
+                sleep(0.5)
 
 
 class FulllMap_Thread(object):

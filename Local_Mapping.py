@@ -40,7 +40,8 @@ class LocalMAP(Thread):
             self.Current_Keyframe=copy.deepcopy(self.Keyframe)
             self.NewKeyframes.pop()
         
-        
+        if len(self.Current_Keyframe.frames)==0:
+            return
         self.optimize_initialize()
         print("Processing Local Mapping")
         # print(type(self.Current_Keyframe.frames[::-1]))
@@ -77,6 +78,9 @@ class LocalMAP(Thread):
             Eg.set_robust_kernel(self.robust_kernel)
             self.opt.add_edge(Eg)
         
+
+        self.optimize()
+        
         
 
 
@@ -95,6 +99,8 @@ class LocalMAP(Thread):
         self.opt.set_verbose(False)
         self.opt.optimize(100)
         self.update_pose()
+        del self.Current_Keyframe
+        del self.opt
         
         
     def update_pose(self):
@@ -126,7 +132,7 @@ class LocalMAP(Thread):
                 # print(1)
                 self.SetAcceptKeyFrames(False)
                 self.Process_newKeyframe()
-                self.optimize()
+                # self.optimize()
                 # self.Keyframe.update_frames()
                 with self.lock:
                     self.mapp.keyframes.append(self.Keyframe)
