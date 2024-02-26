@@ -65,7 +65,7 @@ Full_MAP=FulllMap_Thread()
 Full_MAP.create_Thread(mapp)
 # kFrame=None
 
-th2=0.7
+th2=0.6
 Loop=Loop_Thread()
 Loop.create_Thread(mapp,th2)
 
@@ -81,8 +81,7 @@ Loop.create_Thread(mapp,th2)
 
 def process_img(img,depth):
     global kFrame
-    # GICP_T.gc.event.set()
-    # Loop.lc.event.set()
+    
         
     # creating frame object
     frame=Frame(mapp,img,depth,K)
@@ -98,8 +97,7 @@ def process_img(img,depth):
         # GICP_T.gc.event.set()
         Loop.lc.event.set()
         frame.pose=Int_pose
-        frame.Rpose=Int_pose
-        # mapp.keyframes.append(Keyframe(frame))
+        # frame.Rpose=Int_pose
         frame.isKey=True
         kFrame=Keyframe(frame)
         return
@@ -121,11 +119,11 @@ def process_img(img,depth):
     #initialize pose of each frame
     idx2,idx1,pose=match(f_c,f_p)
 
+    # f_c.pose=np.dot(Kpose,kFrame.frame.pose)
     f_c.pose=np.dot(pose,f_p.pose)
-   
 
-    if mapp.keyframes:
-        print("Keyframe ID: ",len(mapp.keyframes))
+    # if mapp.keyframes:
+    #     print("Keyframe ID: ",len(mapp.keyframes))
 
     # Take the next frame as an reference for ratio
 
@@ -146,27 +144,27 @@ def process_img(img,depth):
         
         M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
         
-        if (M_ratio<0.5) and (flag):
+        if (M_ratio<0.7) and (flag):
             # Local_map.lm.CheckNewKeyframe=True
             with Lock():
+                print("main",f_c.id)
+                
                 Local_map.lm.NewKeyframes.append(kFrame)
+                Local_map.lm.SetAcceptKeyFrames(False)
+                # Local_map.event.set()
+                # Full_MAP.event.set()
             
             f_c.isKey=True
             EDGE(mapp,kFrame.id,f_c.id,Kpose,1)
-            # if len(mapp.keyframes)>2:
-            #     mapp.optimize()
             kFrame=Keyframe(f_c)
-            # kFrame.pose=np.dot(Kpose,kFrame.pose)
-
-            # EDGE(mapp,kFrame.id,Newkeyframe.id,Kpose,1)
-            # mapp.keyframes.append(Newkeyframe)
+            
         else:
             kFrame.add_frames(f_c)
         
 
 
 
-    # displaying features on RGB image
+    # # displaying features on RGB image
     for kp1,kp2 in zip(f_p.kps[idx1],f_c.kps[idx2]):
         u_p,v_p,_=denormalize(kp1,f_p.K)
         u_c,v_c,_=denormalize(kp2,f_c.K)
@@ -181,6 +179,7 @@ def process_img(img,depth):
     disp(depth,"Depth")
     # frame.id>20:
     mapp.display()
+    # del frame
     # mapp.optimize()
 
 

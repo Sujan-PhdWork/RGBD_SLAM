@@ -31,7 +31,9 @@ class LocalMAP(Thread):
         self.Acceptance_flag=flag
     
     def CheckNewKeyframe(self):
-        return self.NewKeyframes
+        for k in self.NewKeyframes:
+            # print('New Key: ',k.id,self.Acceptance_flag)
+            return len(self.NewKeyframes)
     
     
     def Process_newKeyframe(self):
@@ -58,7 +60,7 @@ class LocalMAP(Thread):
             v_se3.set_estimate(pcam)
             # print(f.isKey)
             v_se3.set_fixed(f.isKey)
-            print("in LocalMapping:",f.id)
+            # print("in LocalMapping:",f.id)
             self.opt.add_vertex(v_se3)
             
         
@@ -128,13 +130,16 @@ class LocalMAP(Thread):
 
         while True:
             # sleep(3)
+            # print('before',self.CheckNewKeyframe())
             if self.CheckNewKeyframe():
+                # print('after',self.CheckNewKeyframe())
                 # print(1)
-                self.SetAcceptKeyFrames(False)
+                # self.SetAcceptKeyFrames(False)
                 self.Process_newKeyframe()
                 # self.optimize()
                 # self.Keyframe.update_frames()
                 with self.lock:
+                    print(self.Keyframe.id)
                     self.mapp.keyframes.append(self.Keyframe)
                 self.SetAcceptKeyFrames(True)
 

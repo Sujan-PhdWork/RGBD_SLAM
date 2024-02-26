@@ -69,7 +69,7 @@ def loop_closure(mapp,th):
     N=len(f1.des)
     
     dcos_list=[]
-    for k in sampled_Keyframes:
+    for k in sampled_Keyframes[:-1]:
         # print(f1.id-f.id)
         # if (f1.id-f.id)<20:
         #     continue
@@ -99,7 +99,7 @@ def loop_closure(mapp,th):
         if (N1/N)>=th:
             _,_,pose=match(f1,k.frame)
             # pose=GICP(f,f1)
-            EDGE(mapp,k.frame.id,f1.id,pose,5)
+            EDGE(mapp,k.frame.id,f1.id,pose,3)
             print(k.frame.id," : ", (N1/N))
     del T_Keyframes   
         

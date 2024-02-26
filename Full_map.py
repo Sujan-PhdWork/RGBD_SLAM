@@ -40,14 +40,14 @@ class FullMAP(Thread):
                 
                 v_se3.set_estimate(pcam)
                 v_se3.set_fixed(k.frame.id==0)
-                
+                print("In Full_map:",k.frame.id,len(self.tkeyframes))
                 self.opt.add_vertex(v_se3)
 
             for edge in self.edges:
                 f1,f2,noise=edge.frames
                 pose=edge.pose
                 Eg= g2o.EdgeSE3()
-                print("In Full_map:",f1.id,f2.id)
+                # print("In Full_map:",f1.id,f2.id)
                 Eg.set_vertex(0,self.opt.vertex(f1.id))
                 Eg.set_vertex(1,self.opt.vertex(f2.id))
                 scam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
@@ -63,11 +63,17 @@ class FullMAP(Thread):
 
             # opt.save('gicp.g2o')
 
-            self.opt.set_verbose(True)
-            self.opt.optimize(100)
+            # self.opt.set_verbose(True)
+            self.opt.optimize(10)
 
+            # Mistake:: 
             with self.lock:
                 for k in self.mapp.keyframes:
+                    if self.opt.vertex(k.frame.id) is None:
+                        continue
+
+
+                    # print(k.frame.id)
                     Iest = self.opt.vertex(k.frame.id).estimate()
                     ret=np.eye(4)
                     ret[:3,:3]=Iest.rotation().matrix()
