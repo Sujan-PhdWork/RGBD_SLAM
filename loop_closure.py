@@ -20,88 +20,96 @@ class LoopThread(Thread):
         self.event=Event()
         self.nKframes=0
 
-    
+    def loop_closure(self,keyframes,th):
+        if len(keyframes)<3:
+            return
+
+        # T_Keyframes=copy.deepcopy(keyframes)    
+        
+        if len(keyframes)>20:
+            sampled_Keyframes=random.sample(keyframes[:-1],20)
+        
+        else:
+            sampled_Keyframes=random.sample(keyframes[:-1], round(len(keyframes)/3))
+        # sampled_frames.append(mapp.frames[-2])
+        # sampled_frames.append(mapp.frames[-3])
+        
+        # TF_IDF(sampled_frames)
+
+        f1=keyframes[-1].frame
+
+        # number of features in current frame  
+        N=len(f1.des)
+        
+        dcos_list=[]
+        for k in sampled_Keyframes[:-1]:
+            # print(f1.id-f.id)
+            # if (f1.id-f.id)<20:
+            #     continue
+            
+            
+            
+            brute_force = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
+            matches1 = brute_force.match(k.frame.des,f1.des)
+            
+            #number of matched features
+            
+            N1=len(matches1)
+            
+            #
+            # print(" : ",(N1/N))
+            # print("ratio of the matched features: ",N1/N)
+
+            # matches2 = brute_force.match(f.des,f2.des)
+            # N2=len(matches2)
+
+            # matches3 = brute_force.match(f.des,f3.des)
+            # N3=len(matches3)
+
+            # avg maches
+            # N=(N1+N2+N3)/3.0
+
+            if (N1/N)>=th:
+                _,_,pose=match(f1,k.frame)
+                # pose=GICP(f,f1)
+                with self.lock:
+                    EDGE(self.mapp,k.frame.id,f1.id,pose,5)
+                print(k.frame.id," :..................... ", (N1/N))
+        # del T_Keyframes   
+
+
+
     def run(self):
 
         while True:
             # if self.event.isSet():
             
-            with self.lock:
-                if self.event.isSet():
-                    if (len(self.mapp.keyframes)-self.nKframes)>0: 
-                        self.nKframes=len(self.mapp.keyframes)
+            
+            if self.event.isSet():
+                with self.lock:
+                    tkeys=copy.deepcopy(self.mapp.keyframes)
+                    if (len(tkeys)-self.nKframes)>0: 
+                        self.nKframes=len(tkeys)
                         if self.nKframes>1:
-                    
-                            loop_closure(self.mapp,self.th)
+                            
+                            self.loop_closure(tkeys,self.th)
+                            del tkeys
                             # local_mapping(self.submap)
                             # self.event.clear()
                             # self.event.clear()    
                             sleep(1)
                         else:
+                            del tkeys
                             sleep(1)
                     else:
+                            del tkeys
                             sleep(1)
-                else:
-                    self.event.wait()
+            else:
+                self.event.wait()
 
     
 
 
-def loop_closure(mapp,th):
-    if len(mapp.keyframes)<3:
-        return
-
-    T_Keyframes=copy.deepcopy(mapp.keyframes)    
-    
-    if len(T_Keyframes)>20:
-        sampled_Keyframes=random.sample(T_Keyframes[:-1],20)
-    
-    else:
-        sampled_Keyframes=random.sample(T_Keyframes[:-1], round(len(T_Keyframes)/3))
-    # sampled_frames.append(mapp.frames[-2])
-    # sampled_frames.append(mapp.frames[-3])
-    
-    # TF_IDF(sampled_frames)
-
-    f1=mapp.keyframes[-1].frame
-
-    # number of features in current frame  
-    N=len(f1.des)
-    
-    dcos_list=[]
-    for k in sampled_Keyframes[:-1]:
-        # print(f1.id-f.id)
-        # if (f1.id-f.id)<20:
-        #     continue
-        
-        
-        
-        brute_force = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
-        matches1 = brute_force.match(k.frame.des,f1.des)
-        
-        #number of matched features
-         
-        N1=len(matches1)
-        
-        #
-        # print(" : ",(N1/N))
-        # print("ratio of the matched features: ",N1/N)
-
-        # matches2 = brute_force.match(f.des,f2.des)
-        # N2=len(matches2)
-
-        # matches3 = brute_force.match(f.des,f3.des)
-        # N3=len(matches3)
-
-        # avg maches
-        # N=(N1+N2+N3)/3.0
-
-        if (N1/N)>=th:
-            _,_,pose=match(f1,k.frame)
-            # pose=GICP(f,f1)
-            EDGE(mapp,k.frame.id,f1.id,pose,3)
-            print(k.frame.id," : ", (N1/N))
-    del T_Keyframes   
         
         
 

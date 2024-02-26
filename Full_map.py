@@ -35,12 +35,11 @@ class FullMAP(Thread):
                 pose=k.frame.pose
                 v_se3=g2o.VertexSE3()
                 v_se3.set_id(k.frame.id)
-
                 pcam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
                 
                 v_se3.set_estimate(pcam)
                 v_se3.set_fixed(k.frame.id==0)
-                print("In Full_map:",k.frame.id,len(self.tkeyframes))
+                # print("In Full_map:",k.frame.id,len(self.tkeyframes))
                 self.opt.add_vertex(v_se3)
 
             for edge in self.edges:
@@ -69,8 +68,9 @@ class FullMAP(Thread):
             # Mistake:: 
             with self.lock:
                 for k in self.mapp.keyframes:
-                    if self.opt.vertex(k.frame.id) is None:
-                        continue
+                    # print(self.opt.vertex(k.frame.id))# is None:
+                        #print('Your are not suppose to add now')
+                        #continue
 
 
                     # print(k.frame.id)
@@ -85,30 +85,32 @@ class FullMAP(Thread):
     
     def run(self):
 
+             
         while True:
-            # sleep(3)
-            with self.lock:
+            if self.event.is_set():
+                # sleep(3)
+                with self.lock:
 
-                self.tkeyframes=copy.deepcopy(self.mapp.keyframes)
-                self.edges=copy.deepcopy(self.mapp.edges)
+                    self.tkeyframes=copy.deepcopy(self.mapp.keyframes)
+                    self.edges=copy.deepcopy(self.mapp.edges)
 
-            if (len(self.tkeyframes)-self.nKframes)>0: 
-                self.nKframes=len(self.tkeyframes)
-                if self.nKframes>1:
-                    # print(1)
-                    self.optimize()
-                    del self.tkeyframes
-                    del self.opt
-                    # self.Keyframe.update_frames()
-                    # sleep(0.5)
-                else:
-                    del self.tkeyframes
-                    sleep(0.5)
+                
+                # print(1)
+                if len(self.tkeyframes)==1:
+                    print('First key frame')
+                    self.event.clear()
+                    continue
+                print('Full optimization...')
+                self.optimize()
+                del self.tkeyframes
+                del self.opt
+                # self.Keyframe.update_frames()
+                # sleep(0.5)
+                self.event.clear()
             
             
             else:
-                del self.tkeyframes
-                sleep(0.5)
+                self.event.wait()
 
 
 class FulllMap_Thread(object):

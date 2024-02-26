@@ -5,6 +5,8 @@ import numpy as np
 import copy
 import g2o
 from GICP_test import GICP
+from Full_map import FulllMap_Thread
+
 
 # from  local_mapping import local_mapping  
 from time import sleep
@@ -15,7 +17,11 @@ class LocalMAP(Thread):
     def __init__(self,mapp,lock):
         Thread.__init__(self)
         
+
+        
         self.mapp=mapp
+        self.Full_MAP=FulllMap_Thread()
+        self.Full_MAP.create_Thread(self.mapp)
         # self.Keyframe=None
         self.lock=lock
         self.daemon=True
@@ -39,7 +45,7 @@ class LocalMAP(Thread):
     def Process_newKeyframe(self):
         with self.lock:
             self.Keyframe=self.NewKeyframes[0]
-            self.Current_Keyframe=copy.deepcopy(self.Keyframe)
+            self.Current_Keyframe=copy.deepcopy(self.NewKeyframes[0])
             self.NewKeyframes.pop()
         
         if len(self.Current_Keyframe.frames)==0:
@@ -139,9 +145,21 @@ class LocalMAP(Thread):
                 # self.optimize()
                 # self.Keyframe.update_frames()
                 with self.lock:
-                    print(self.Keyframe.id)
+                    print('Local map optimization...')
+                    # print(self.Keyframe.id)
                     self.mapp.keyframes.append(self.Keyframe)
+                    if self.Keyframe.id==0:
+                        self.Full_MAP.fm.event.set()
+                    else:
+                        
+                        while True:
+                            if not self.Full_MAP.fm.event.is_set():
+                                break
+
+                        self.Full_MAP.fm.event.set()
+                            
                 self.SetAcceptKeyFrames(True)
+                sleep(1)
 
             else:
                 sleep(0.5)
@@ -155,3 +173,5 @@ class LocalMap_Thread(object):
             lock=Lock()
             self.lm=LocalMAP(mapp,lock)
             self.lm.start()
+
+   
