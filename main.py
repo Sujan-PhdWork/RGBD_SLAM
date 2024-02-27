@@ -14,6 +14,7 @@ import pcl.pcl_visualization
 import pcl
 from Full_map import FulllMap_Thread
 from scipy.spatial.transform import Rotation as R
+from global_localization import global_localization
 
 # from keyframe import Keyframes
 # from  local_mapping import local_mapping  
@@ -69,6 +70,7 @@ kFrame=None
 th2=0.6
 Loop=Loop_Thread()
 Loop.create_Thread(mapp,th2)
+G_localization_flag=False
 
 
 
@@ -81,13 +83,24 @@ Loop.create_Thread(mapp,th2)
 
 
 def process_img(img,depth):
-    global kFrame
+    global kFrame,G_localization_flag
     
         
     # creating frame object
     frame=Frame(mapp,img,depth,K)
+    if G_localization_flag:
+        bool_flag=global_localization(mapp,frame,0.6)
+        disp(img,"RGB")
+        disp(depth,"Depth")
+        if not bool_flag:
+            return
+        G_localization_flag=False
+        mapp.frames.append(frame)
+        return
+            
+
     mapp.frames.append(frame)
- 
+    
     # print(1)
     if (frame.id)==0:
         # print(2)
@@ -115,8 +128,10 @@ def process_img(img,depth):
     #Matching between current_frame and keyframe
     Kidx2,Kidx1,Kpose=match(f_c,kFrame.frame)
     
+     
     #initialize pose of each frame
     idx2,idx1,pose=match(f_c,f_p)
+
 
     # print(idx1 is None)
     # t=pose[:3,3]
@@ -125,6 +140,7 @@ def process_img(img,depth):
     # np.r.as_rotvec()
 
     # f_c.pose=np.dot(Kpose,kFrame.frame.pose)
+    
     f_c.pose=np.dot(pose,f_p.pose)
 
     # if mapp.keyframes:
@@ -153,6 +169,8 @@ def process_img(img,depth):
             if (M_ratio<0.05):
                 
                 print("Localization Lost.....")
+                G_localization_flag=True
+                return
             # Local_map.lm.CheckNewKeyframe=True
             else:
                 with Lock():
@@ -201,7 +219,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_floor_demo/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
