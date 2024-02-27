@@ -13,6 +13,7 @@ from threading import Thread,Lock
 import pcl.pcl_visualization
 import pcl
 from Full_map import FulllMap_Thread
+from scipy.spatial.transform import Rotation as R
 
 # from keyframe import Keyframes
 # from  local_mapping import local_mapping  
@@ -93,7 +94,7 @@ def process_img(img,depth):
         # Adding first frameas key frame 
         # mapp.keyframe=
         # GICP_T.gc.event.set()
-        # Loop.lc.event.set()
+        Loop.lc.event.set()
         frame.pose=Int_pose
         # frame.Rpose=Int_pose
         frame.isKey=True
@@ -116,6 +117,12 @@ def process_img(img,depth):
     
     #initialize pose of each frame
     idx2,idx1,pose=match(f_c,f_p)
+
+    # print(idx1 is None)
+    # t=pose[:3,3]
+    # print('Translation')
+    # r=R.from_matrix(pose[:3,:3])
+    # np.r.as_rotvec()
 
     # f_c.pose=np.dot(Kpose,kFrame.frame.pose)
     f_c.pose=np.dot(pose,f_p.pose)
@@ -143,21 +150,25 @@ def process_img(img,depth):
         M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
         
         if (M_ratio<0.8) and (flag):
-            # Local_map.lm.CheckNewKeyframe=True
-            with Lock():
-                print("Key id:",f_c.id)
+            if (M_ratio<0.05):
                 
-                Local_map.lm.NewKeyframes.append(kFrame)
-                Local_map.lm.SetAcceptKeyFrames(False)
-                # Local_map.event.set()
-                # Full_MAP.event.set()
-            
-            f_c.isKey=True
-            f_c.pose=np.dot(Kpose,kFrame.frame.pose)
-            
-            
-            EDGE(mapp,kFrame.id,f_c.id,Kpose,0.02)
-            kFrame=Keyframe(f_c)
+                print("Localization Lost.....")
+            # Local_map.lm.CheckNewKeyframe=True
+            else:
+                with Lock():
+                    print("Key id:",f_c.id)
+                    
+                    Local_map.lm.NewKeyframes.append(kFrame)
+                    Local_map.lm.SetAcceptKeyFrames(False)
+                    # Local_map.event.set()
+                    # Full_MAP.event.set()
+                
+                f_c.isKey=True
+                f_p.pose=np.dot(Kpose,kFrame.frame.pose)
+                
+                
+                EDGE(mapp,kFrame.id,f_c.id,Kpose,0.2)
+                kFrame=Keyframe(f_c)
         else:
             kFrame.add_frames(f_c)
         
@@ -190,7 +201,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_floor_demo/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)

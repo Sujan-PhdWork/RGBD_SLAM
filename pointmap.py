@@ -45,7 +45,7 @@ class EDGE(object):
         f1=mapp.frames[id1]
         f2=mapp.frames[id2]
 
-        # print ("Adding edge between",f1.id,f2.id)
+        print ("Adding edge between",f1.id,f2.id)
         self.frames=[f1,f2,noise]
 
 

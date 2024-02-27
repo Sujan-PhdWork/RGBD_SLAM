@@ -59,8 +59,8 @@ def to_3D(depth,K):
 
 def extract(img,depth):
     
-    orb=cv2.ORB_create(100)
-    feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
+    orb=cv2.ORB_create()
+    feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),10000,qualityLevel=0.01,minDistance=3)
     # print(feats)
     kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
     
@@ -95,7 +95,7 @@ def match(f1,f2):
 
     for m,n in matches:
         if m.distance <0.75*n.distance:
-            if m.distance < 32:
+            if m.distance < 30:
                 idx1.append(m.queryIdx)
                 idx2.append(m.trainIdx)
 
@@ -120,7 +120,7 @@ def match(f1,f2):
     
     ransac=RANSAC(ret,Transformation(),3,0.05,100)
     model,inliers,error=ransac.solve()
-
+    # print(error)
     idx1=idx1[inliers]
     idx2=idx2[inliers]
 

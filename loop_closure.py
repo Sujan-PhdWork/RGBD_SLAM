@@ -70,11 +70,14 @@ class LoopThread(Thread):
             # N=(N1+N2+N3)/3.0
 
             if (N1/N)>=th:
+                # print(f1.id,'::',k.frame.id)
                 _,_,pose=match(f1,k.frame)
                 # pose=GICP(f,f1)
                 with self.lock:
-                    EDGE(self.mapp,k.frame.id,f1.id,pose,5)
-                print(k.frame.id," :..................... ", (N1/N))
+                    EDGE(self.mapp,k.frame.id,f1.id,pose,3)
+                    print(k.frame.id," :..................... ", 'Loop closing')
+                    return
+                
         # del T_Keyframes   
 
 
@@ -88,22 +91,22 @@ class LoopThread(Thread):
             if self.event.isSet():
                 with self.lock:
                     tkeys=copy.deepcopy(self.mapp.keyframes)
-                    if (len(tkeys)-self.nKframes)>0: 
-                        self.nKframes=len(tkeys)
-                        if self.nKframes>1:
-                            
-                            self.loop_closure(tkeys,self.th)
-                            del tkeys
-                            # local_mapping(self.submap)
-                            # self.event.clear()
-                            # self.event.clear()    
-                            sleep(1)
-                        else:
-                            del tkeys
-                            sleep(1)
+                if (len(tkeys)-self.nKframes)>0: 
+                    self.nKframes=len(tkeys)
+                    if self.nKframes>1:
+                        # print('hello')
+                        self.loop_closure(tkeys,self.th)
+                        del tkeys
+                        # local_mapping(self.submap)
+                        # self.event.clear()
+                        # self.event.clear()    
+                        sleep(1)
                     else:
-                            del tkeys
-                            sleep(1)
+                        del tkeys
+                        sleep(1)
+                else:
+                        del tkeys
+                        sleep(1)
             else:
                 self.event.wait()
 

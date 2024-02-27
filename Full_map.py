@@ -52,7 +52,7 @@ class FullMAP(Thread):
                 scam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
                 Eg.set_measurement(scam)
                 Eg.set_information(noise*np.eye(6))
-                # Eg.set_robust_kernel(robust_kernel)
+                Eg.set_robust_kernel(robust_kernel)
                 self.opt.add_edge(Eg)
 
 
