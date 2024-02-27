@@ -95,18 +95,18 @@ def match(f1,f2):
 
     for m,n in matches:
         if m.distance <0.75*n.distance:
+            if m.distance < 32:
+                idx1.append(m.queryIdx)
+                idx2.append(m.trainIdx)
 
-            idx1.append(m.queryIdx)
-            idx2.append(m.trainIdx)
+                # idx1-> id of the keypoint in previous frame
+                # idx2-> id of the keypoint in current frame
 
-            # idx1-> id of the keypoint in previous frame
-            # idx2-> id of the keypoint in current frame
+                kp1=f1.kps[m.queryIdx]
+                kp2=f2.kps[m.trainIdx]
 
-            kp1=f1.kps[m.queryIdx]
-            kp2=f2.kps[m.trainIdx]
-
-            # kp1[idx]-> the keypoint in previous frame with id =idx            
-            ret.append((kp1,kp2))
+                # kp1[idx]-> the keypoint in previous frame with id =idx            
+                ret.append((kp1,kp2))
 
     assert len(ret)>=3
     ret=np.array(ret).astype(np.float32)

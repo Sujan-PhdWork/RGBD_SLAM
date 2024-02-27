@@ -52,7 +52,7 @@ class FullMAP(Thread):
                 scam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
                 Eg.set_measurement(scam)
                 Eg.set_information(noise*np.eye(6))
-                Eg.set_robust_kernel(robust_kernel)
+                # Eg.set_robust_kernel(robust_kernel)
                 self.opt.add_edge(Eg)
 
 
@@ -74,10 +74,10 @@ class FullMAP(Thread):
 
 
                     # print(k.frame.id)
-                    Iest = self.opt.vertex(k.frame.id).estimate()
+                    est = self.opt.vertex(k.frame.id).estimate()
                     ret=np.eye(4)
-                    ret[:3,:3]=Iest.rotation().matrix()
-                    ret[:3,3]=t = Iest.translation()
+                    ret[:3,:3]=est.rotation().matrix()
+                    ret[:3,3]=t = est.translation()
                     # print(t)
                     R_pose=np.dot(ret,np.linalg.inv(k.frame.pose))
                     k.update_frames(R_pose)

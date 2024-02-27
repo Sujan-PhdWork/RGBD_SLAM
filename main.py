@@ -61,8 +61,8 @@ Local_map=LocalMap_Thread()
 Local_map.create_Thread(mapp)
 kFrame=None
 
-Full_MAP=FulllMap_Thread()
-Full_MAP.create_Thread(mapp)
+# Full_MAP=FulllMap_Thread()
+# Full_MAP.create_Thread(mapp)
 # kFrame=None
 
 th2=0.6
@@ -85,8 +85,6 @@ def process_img(img,depth):
         
     # creating frame object
     frame=Frame(mapp,img,depth,K)
-    
-    
     mapp.frames.append(frame)
  
     # print(1)
@@ -155,9 +153,11 @@ def process_img(img,depth):
                 # Full_MAP.event.set()
             
             f_c.isKey=True
+            f_c.pose=np.dot(Kpose,kFrame.frame.pose)
+            
+            
             EDGE(mapp,kFrame.id,f_c.id,Kpose,0.02)
             kFrame=Keyframe(f_c)
-            
         else:
             kFrame.add_frames(f_c)
         
