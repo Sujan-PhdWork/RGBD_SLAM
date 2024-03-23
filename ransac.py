@@ -2,10 +2,15 @@ import numpy as np
 
 
 class RANSAC:
-    def __init__(self,matches,model,n,th,iter):
-        coordinate_array=np.array(matches)
-        self.kp1=coordinate_array[:,0,:].T
-        self.kp2=coordinate_array[:,1,:].T
+    def __init__(self,f1,f2,matches21,model,n,th,iter):
+        
+        self.f1=f1
+        self.f2=f2
+        self.matches=matches21
+
+        # coordinate_array=np.array(matches)
+        # self.kp1=coordinate_array[:,0,:].T
+        # self.kp2=coordinate_array[:,1,:].T
         
         self.sample=n
         self.threshold=th
@@ -23,19 +28,27 @@ class RANSAC:
 
             #select random sample
             # print(self.pt1.shape[1])
-
-            idxs=np.random.randint(0,self.kp1.shape[1],size=self.sample) 
-                  
             
-            pts1=self.kp1[:,idxs]
-            pts2=self.kp2[:,idxs]
+            
+
+
+            idxs=np.random.randint(0,self.matches.shape[0],size=self.sample) 
+            
+
+            match1=self.matches[idxs,1]
+            match2=self.matches[idxs,0]
+
+
+            pts1=self.f1.kps[match1,:]
+            pts2=self.f2.kps[match2,:]
+            
 
             #compute model parameter
             
-            self.model.compute_parameter(pts1,pts2)
+            self.model.compute_parameter(pts1.T,pts2.T)
             
             #calculate the reprojection error
-            error=self.model.error(self.kp1,self.kp2)
+            error=self.model.error(self.f1.kps[self.matches[:,1]].T,self.f2.kps[self.matches[:,0]].T)
 
             if error is None:
                 continue

@@ -44,6 +44,13 @@ Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
 mapp=Map()
 mapp.create_viewer()
 
+
+# def create_graph()
+
+
+
+
+
 def process_img(img,depth):
     
     frame=Frame(mapp,img,depth,K)
@@ -58,7 +65,7 @@ def process_img(img,depth):
     f_p=mapp.frames[-2] # previous frame
     
     
-    idx2,idx1,pose=match(f_c,f_p)
+    vbmatches21,pose=match(f_c,f_p)
     
     
     # idx1-> id of the keypoint in previous frame
@@ -66,22 +73,32 @@ def process_img(img,depth):
     # pose relative transformation of current frame  
     # with respect to previous frame 
 
-    assert len(idx1)>0
-    assert len(idx2)>0
+    assert len(vbmatches21)>0
+    # assert len(idx2)>0
     
     if pose is None:
         return
     
     f_c.pose=np.dot(pose,f_p.pose) 
     # EDGE(mapp,f_p.id,f_c.id,pose)
-    print(f_c.pose)
+    # print(f_c.pose)
     
     # relative orientaion from pose of second frame 
     #with respect to first frame
+    
 
-    f_p.pts=f_p.kps[idx1] # points on previous frame
-    f_c.pts=f_c.kps[idx2] # points on current frame
+    for idx2,idx1 in vbmatches21:
+        f_c.matchPts[idx2]=idx1
+        f_p.matchPts[idx1]=idx2
 
+    # print(f_c)
+    # f_p.pts=f_p.kps[idx1] # points on previous frame
+    # f_c.pts=f_c.kps[idx2] # points on current frame
+
+    # f_c
+
+
+    # create_graph(f_p)
     # print(np.sum(f_c.hist))
     # if frame.id >100:
     #     lc_process(mapp,100)
@@ -105,14 +122,18 @@ def process_img(img,depth):
     #with respect to first frame
 
 
-    for kp1,kp2 in zip(f_p.kps[idx1],f_c.kps[idx2]):
+    for idx2,idx1 in enumerate(f_c.matchPts):
+
+        if idx1<0:
+            continue
+        kp1=f_p.kps[idx1]
+        kp2=f_c.kps[idx2]
         u_p,v_p,_=denormalize(kp1,f_p.K)
         u_c,v_c,_=denormalize(kp2,f_c.K)
-        # u_p,v_p,_=kp1
-
         cv2.circle(img,(u_p,v_p),color=(0,255,0),radius=3)
-        cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
-
+        # cv2.circle(img,(u_c,v_c),color=(0,0,255),radius=3)
+        cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0)) 
+    
     
     
     disp(img,"RGB")
@@ -135,7 +156,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg2_rpy/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
@@ -151,7 +172,7 @@ if __name__ == "__main__":
         depth=cv2.imread(dataset_path+dlist[i],-1) # 16 bit monochorme image 
         # print(frame.shape,depth.shape)
 
-        print(depth)
+        # print(depth)
         process_img(frame,depth)
 
         # t1=Thread(target=process_img,args=(frame,depth))
@@ -170,7 +191,7 @@ if __name__ == "__main__":
             break
     cv2.destroyAllWindows()
     
-    optimize_frame(mapp)
+    # optimize_frame(mapp)
     mapp.display()
 
 
