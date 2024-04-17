@@ -45,6 +45,7 @@ def transformation(kp1,kp2):
 
     R=np.dot(U,np.dot(S,VT))
     c=(1/(var_x+eps))*(np.trace(np.dot(D,S)))
+    # c=1.0
     t=muy-c*np.dot(R,mux)
     
     error=var_y-((np.trace(np.dot(D,S)))**2)/(var_x+eps)

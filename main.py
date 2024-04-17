@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 from utils import *
-from frame import match,Frame
+from frame import match,Frame,match_by_segmentation
 from keyframe import Keyframe
 from Local_Mapping import LocalMap_Thread
 # import g2o
@@ -15,7 +15,7 @@ import pcl
 from Full_map import FulllMap_Thread
 from scipy.spatial.transform import Rotation as R
 from global_localization import global_localization
-
+# from custom_function import custom_function
 # from keyframe import Keyframes
 # from  local_mapping import local_mapping  
 
@@ -53,14 +53,14 @@ Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
 # Int_pose=np.eye(4)
 
 mapp=Map()
-mapp.create_viewer()
+# mapp.create_viewer()
 
 #keyframe Thresolding
 # th1=900.0
 
 # # Computing keyframe
 Local_map=LocalMap_Thread()
-Local_map.create_Thread(mapp)
+# Local_map.create_Thread(mapp)
 kFrame=None
 
 # Full_MAP=FulllMap_Thread()
@@ -69,7 +69,7 @@ kFrame=None
 
 th2=0.6
 Loop=Loop_Thread()
-Loop.create_Thread(mapp,th2)
+# Loop.create_Thread(mapp,th2)
 G_localization_flag=False
 
 
@@ -103,11 +103,8 @@ def process_img(img,depth):
     
     # print(1)
     if (frame.id)==0:
-        # print(2)
-        # Adding first frameas key frame 
-        # mapp.keyframe=
-        # GICP_T.gc.event.set()
-        Loop.lc.event.set()
+        
+        # Loop.lc.event.set()
         frame.pose=Int_pose
         # frame.Rpose=Int_pose
         frame.isKey=True
@@ -121,25 +118,23 @@ def process_img(img,depth):
     
     f_c=mapp.frames[-1] #Current frame
     f_p=mapp.frames[-2] # Previous frame
+    # if frame.id>= 2:
+        # f_lp=mapp.frames[-3] # Second Last frame
+        # custom_function(f_p,f_lp)    
 
-
-    
 
     #Matching between current_frame and keyframe
+    
+
     Kidx2,Kidx1,Kpose=match(f_c,kFrame.frame)
     
-     
+    
+    
+    p_p,p_c,idx1,idx2=match_by_segmentation(f_c,f_p)
     #initialize pose of each frame
-    idx2,idx1,pose=match(f_c,f_p)
+    # idx2,idx1,pose=match(f_c,f_p)
+    _,_,pose=match(f_c,f_p)
 
-
-    # print(idx1 is None)
-    # t=pose[:3,3]
-    # print('Translation')
-    # r=R.from_matrix(pose[:3,:3])
-    # np.r.as_rotvec()
-
-    # f_c.pose=np.dot(Kpose,kFrame.frame.pose)
     
     f_c.pose=np.dot(pose,f_p.pose)
 
@@ -154,52 +149,64 @@ def process_img(img,depth):
         # print(kFrame.id)
         kFrame.nmpts=len(Kidx1)
     
-    else:
-        with Lock():
-            flag=Local_map.lm.Acceptance_flag
-            # print(mapp.frames[2].pose)
+    # else:
+        # with Lock():
+        #     flag=Local_map.lm.Acceptance_flag
+        #     # print(mapp.frames[2].pose)
         # _,_,pose=match(f_c,f_p)
         
         
         
         
-        M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
+        # M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
         
-        if (M_ratio<0.8) and (flag):
-            if (M_ratio<0.05):
+        # if (M_ratio<0.8) and (flag):
+        #     if (M_ratio<0.05):
                 
-                print("Localization Lost.....")
-                G_localization_flag=True
-                return
-            # Local_map.lm.CheckNewKeyframe=True
-            else:
-                with Lock():
-                    print("Key id:",f_c.id)
+        #         print("Localization Lost.....")
+        #         G_localization_flag=True
+        #         return
+        #     # Local_map.lm.CheckNewKeyframe=True
+        #     else:
+        #         with Lock():
+        #             print("Key id:",f_c.id)
                     
-                    Local_map.lm.NewKeyframes.append(kFrame)
-                    Local_map.lm.SetAcceptKeyFrames(False)
-                    # Local_map.event.set()
-                    # Full_MAP.event.set()
+        #             # Local_map.lm.NewKeyframes.append(kFrame)
+        #             # Local_map.lm.SetAcceptKeyFrames(False)
+        #             # Local_map.event.set()
+        #             # Full_MAP.event.set()
                 
-                f_c.isKey=True
-                f_p.pose=np.dot(Kpose,kFrame.frame.pose)
+        #         f_c.isKey=True
+        #         f_p.pose=np.dot(Kpose,kFrame.frame.pose)
                 
                 
-                EDGE(mapp,kFrame.id,f_c.id,Kpose,0.2)
-                kFrame=Keyframe(f_c)
-        else:
-            kFrame.add_frames(f_c)
+        #         EDGE(mapp,kFrame.id,f_c.id,Kpose,0.2)
+        #         kFrame=Keyframe(f_c)
+        # else:
+        #     kFrame.add_frames(f_c)
         
 
 
 
     # # displaying features on RGB image
-    for kp1,kp2 in zip(f_p.kps[idx1],f_c.kps[idx2]):
+
+    for i in range(p_c.shape[0]):
+       u_p,v_p= denormalize2(p_c[i],f_p.K)
+       cv2.circle(img,(u_p,v_p),color=(0,255,255),radius=3,thickness=-1)
+
+
+    for kp1,kp2 in zip(f_p.kps[idx2],f_c.kps[idx1]):
         u_p,v_p,_=denormalize(kp1,f_p.K)
         u_c,v_c,_=denormalize(kp2,f_c.K)
         # u_p,v_p,_=kp1
+        r=5
+        pt1=(u_c-r,v_c-r)
+        pt2=(u_c+r,v_c+r)
+                
 
-        cv2.circle(img,(u_p,v_p),color=(0,255,0),radius=3)
+        cv2.rectangle(img,pt1,pt2,(0,0,255))
+       
+        cv2.circle(img,(u_c,v_c),color=(0,255,0),radius=3)
         cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
 
     
@@ -207,7 +214,7 @@ def process_img(img,depth):
     disp(img,"RGB")
     disp(depth,"Depth")
     # frame.id>20:
-    mapp.display()
+    # mapp.display()
     # del frame
     # mapp.optimize()
 
@@ -218,9 +225,8 @@ def optimize_frame(mapp):
 
 
 if __name__ == "__main__":
-    
+    # dataset_path='../dataset/rgbd_dataset_freiburg3_walking_xyz_validation/'
     dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
-
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
 
@@ -232,7 +238,9 @@ if __name__ == "__main__":
     for i in range(len(dlist)):
 
         frame=cv2.imread(dataset_path+ilist[i]) # 8 bit image
-        depth=cv2.imread(dataset_path+dlist[i],-1) # 16 bit monochorme image 
+        depth=cv2.imread(dataset_path+dlist[i],-1) # 16 bit monochorme image
+        
+        
         
         process_img(frame,depth)
 
