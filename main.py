@@ -130,10 +130,10 @@ def process_img(img,depth):
     
     
     
-    p_p,p_c,idx1,idx2=match_by_segmentation(f_c,f_p)
+    point_p=match_by_segmentation(f_c,f_p)
     #initialize pose of each frame
     # idx2,idx1,pose=match(f_c,f_p)
-    _,_,pose=match(f_c,f_p)
+    idx1,idx2,pose=match(f_c,f_p)
 
     
     f_c.pose=np.dot(pose,f_p.pose)
@@ -190,9 +190,7 @@ def process_img(img,depth):
 
     # # displaying features on RGB image
 
-    for i in range(p_c.shape[0]):
-       u_p,v_p= denormalize2(p_c[i],f_p.K)
-       cv2.circle(img,(u_p,v_p),color=(0,255,255),radius=3,thickness=-1)
+   
 
 
     for kp1,kp2 in zip(f_p.kps[idx2],f_c.kps[idx1]):
@@ -207,7 +205,7 @@ def process_img(img,depth):
         cv2.rectangle(img,pt1,pt2,(0,0,255))
        
         cv2.circle(img,(u_c,v_c),color=(0,255,0),radius=3)
-        cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
+        cv2.line(img,(u_c,v_c),(u_p,v_p),color=(255,0,0))
 
     
     
@@ -225,8 +223,8 @@ def optimize_frame(mapp):
 
 
 if __name__ == "__main__":
-    # dataset_path='../dataset/rgbd_dataset_freiburg3_walking_xyz_validation/'
-    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
+    dataset_path='../dataset/rgbd_dataset_freiburg3_walking_xyz_validation/'
+    # dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
 

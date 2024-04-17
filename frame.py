@@ -111,7 +111,7 @@ def triangulate(pose1,pose2,pts1,pts2):
      return ret.T
 
 
-def sanity_check_triangulation(f1, f2, idx1, idx2, pose):
+def frames_triangulation(f1, f2, idx1, idx2, pose):
     # Extract the keypoints and descriptors for the corresponding indices
     # print(f1.kps[idx1].shape)
     
@@ -124,30 +124,15 @@ def sanity_check_triangulation(f1, f2, idx1, idx2, pose):
     kps1 = kps1[:, :2]
     kps2 = kps2[:, :2]
 
-    
-    # des1 = f1.des[idx1]
-    # des2 = f2.des[idx2]
+
     P1=np.concatenate((np.eye(3), np.zeros((3, 1))), axis=1)
     # Triangulate the points
 
     pts4d=triangulate(np.eye(4),pose,kps2,kps1)
-    # pts4d = cv2.triangulatePoints(P1, pose[:3, :4], kps2.T, kps1.T)
     pts4d /= pts4d[3, :]
 
-    # Project the triangulated points back to the image plane
-    projected_pts1 = np.dot(P1, pts4d)
-    projected_pts2 = np.dot(pose[:3, :4], pts4d)
-
-    # Normalize the projected points
-    projected_pts1 /= projected_pts1[2, :]
-    projected_pts2 /= projected_pts2[2, :]
-
-    # print("a")
-    # print(kps1)
-    # print("Hi")
-    # print(projected_pts1.T)
-    # print("b")
-    return projected_pts1.T, projected_pts2.T
+    
+    return pts4d 
 
 
 
@@ -157,9 +142,10 @@ def match_by_segmentation(f1,f2):
     # f1 is current frame f2 is previous frame
     ## we will first check how many labels are in last frame
     ## we will use all the points to calculate the transformation
-    # we will use this transformation to calculate the projection matrix of the each frames
-    
+    ## we will create a function that will take the transformation and return the 3d points
+        ## ->(will check later) We will reject bad triangulation 
     # we will then check the matched point triangulation depth and original depth
+    # for covariance measurement we will for now taking maximum condition number of the covariance matrix
     # if the covariance is less than threshold we will consider it as a good match
     # then we will take all the labels except an random one
     # and check if covariance is increase or decrease if its increase then we will reject all the point that are in that label
@@ -204,33 +190,39 @@ def match_by_segmentation(f1,f2):
 
 
 
+    # Points on the previous frame
+
+    point_p=frames_triangulation(f1, f2, idx1, idx2, pose)
 
 
-    point_p,point_c=sanity_check_triangulation(f1, f2, idx1, idx2, pose)
+    # good_pts4d=np.abs(point_p[3,:]>0.005) & (point_p[2,:]>0)
 
-    # P1=np.concatenate((np.eye(3), np.zeros((3, 1))), axis=1)
-    # # P2 = np.linalg.inv(pose)[:3, :4]
-    # P2 = pose[:3, :4]
-    # pts4d=cv2.triangulatePoints(P1,P2,ret[:,1,:2].T,ret[:,0,:2].T)
+    # print(point_p.shape,good_pts4d.shape)
+
+    # point_p=point_p[:,good_pts4d]
+    # ret=ret[good_pts4d]
+
+
+    diff=ret[:,1,:]-point_p[:3,:].T
+
+    mean=np.mean(diff,axis=0)
+
+    # np.outer(kp2[:,i]-muy.T,kp1[:,i]-mux.T)
+    cov=np.cov((diff).T)
+    print(cov)
+
+    # eg= np.linalg.eigvals(cov)
+    cond= np.linalg.cond(cov)
+    # det=np.linalg.det(cov)
+    print(cond)
+
+
+    if cond>0.7:
+        return idx1,idx2,pose
     
-    
-    # # pts4d=triangulate(np.eye(4),pose,ret[:,1,:2],ret[:,0,:2])
-    # # pts4d=pts4d.T
-    # # print(pts4d)
-    # pts4d/=pts4d[3,:]
 
-
-    # point_p=np.dot(P1,pts4d)
-    # point_c=np.dot(P2,pts4d)
     
-    
-    # point_p/=point_p[2,:]
-    # point_c/=point_c[2,:]
-    # # print(point_p.T)
-
-    # return idx1-> current frame
-    # return idx2-> previous frame
-    return point_p,point_c,idx1,idx2
+    return point_p
     # print(pts4d)
 
 
