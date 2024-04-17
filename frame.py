@@ -115,8 +115,16 @@ def sanity_check_triangulation(f1, f2, idx1, idx2, pose):
     # Extract the keypoints and descriptors for the corresponding indices
     # print(f1.kps[idx1].shape)
     
-    kps1 = f1.kps[idx1][:,:2]
-    kps2 = f2.kps[idx2][:,:2]
+    kps1 = f1.kps[idx1]
+    kps2 = f2.kps[idx2]
+
+    kps1 /= kps1[:, 2].reshape(-1, 1)
+    kps2 /= kps2[:, 2].reshape(-1, 1)
+
+    kps1 = kps1[:, :2]
+    kps2 = kps2[:, :2]
+
+    
     # des1 = f1.des[idx1]
     # des2 = f2.des[idx2]
     P1=np.concatenate((np.eye(3), np.zeros((3, 1))), axis=1)
