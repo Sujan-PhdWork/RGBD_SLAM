@@ -111,12 +111,12 @@ def triangulate(pose1,pose2,pts1,pts2):
      return ret.T
 
 
-def frames_triangulation(f1, f2, idx1, idx2, pose):
+def frames_triangulation(f1, kps, idx1, idx2, pose):
     # Extract the keypoints and descriptors for the corresponding indices
     # print(f1.kps[idx1].shape)
     
     kps1 = f1.kps[idx1]
-    kps2 = f2.kps[idx2]
+    kps2 = kps[idx2]
 
     kps1 /= kps1[:, 2].reshape(-1, 1)
     kps2 /= kps2[:, 2].reshape(-1, 1)
@@ -153,7 +153,7 @@ def match_by_segmentation(f1,f2):
 
 
     
-    frame_lable=np.unique(f2.label)
+    # frame_lable=np.unique(f2.label)
     
     bf=cv2.BFMatcher(cv2.NORM_HAMMING)
     matches=bf.knnMatch(f1.des,f2.des,k=2)
@@ -192,7 +192,7 @@ def match_by_segmentation(f1,f2):
 
     # Points on the previous frame
 
-    point_p=frames_triangulation(f1, f2, idx1, idx2, pose)
+    point_p=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
 
 
     # good_pts4d=np.abs(point_p[3,:]>0.005) & (point_p[2,:]>0)
@@ -205,25 +205,142 @@ def match_by_segmentation(f1,f2):
 
     diff=ret[:,1,:]-point_p[:3,:].T
 
-    mean=np.mean(diff,axis=0)
+    # mean=np.mean(diff,axis=0)
 
     # np.outer(kp2[:,i]-muy.T,kp1[:,i]-mux.T)
     cov=np.cov((diff).T)
-    print(cov)
+    # print(cov)
 
-    # eg= np.linalg.eigvals(cov)
+    eg= np.linalg.eigvals(cov)
     cond= np.linalg.cond(cov)
     # det=np.linalg.det(cov)
-    print(cond)
+    inv_cond=1/cond
+    # print(eg[0])
 
-
-    if cond>0.7:
+    initial_eg=eg[0]
+    if eg[0]<0.01:
         return idx1,idx2,pose
     
+    else:
+        print("bigger",eg[0])
 
+        random_labels = np.random.choice(np.arange(f2.sample), size=f2.sample, replace=False)
+        
+
+        for i in random_labels:
+            
+            mask=f2.label==i
+            mask=mask.reshape(-1,1)
+            
+            mask=mask[idx2]
+            new_ret=ret[~mask[:,0]]
+            new_idx1=idx1[~mask[:,0]]
+            new_idx2=idx2[~mask[:,0]]
+
+            ransac=RANSAC(new_ret,Transformation(),8,0.05,100)
+            model,inliers,error=ransac.solve()
+            
+            new_ret=new_ret[inliers]
+            new_idx1=new_idx1[inliers]
+            new_idx2=new_idx2[inliers]
     
-    return point_p
-    # print(pts4d)
+
+            pose=extractRt(model)
+            point_p=frames_triangulation(f1, f2.kps, new_idx1, new_idx2, pose)
+            diff=new_ret[:,1,:]-point_p[:3,:].T
+            cov=np.cov((diff).T)
+            eg= np.linalg.eigvals(cov)
+            # print("my",eg[0])
+            
+            if eg[0]<initial_eg:
+
+                print("deleting lebel ",i, eg[0])
+                ret=new_ret
+                idx1=new_idx1
+                idx2=new_idx2
+                initial_eg=eg[0]
+                
+                if eg[0]<0.01:
+                   return idx1,idx2,pose
+            
+            
+
+        
+        return idx1,idx2,pose
+
+
+
+            
+        #     print(mask.shape)
+        #     mask=mask.reshape(-1,1)
+        #     kps1 = f2.kps[~mask[:, 0]]
+        #     des1 = f2.des[~mask[:, 0]]
+
+        #     bf=cv2.BFMatcher(cv2.NORM_HAMMING)
+        #     matches=bf.knnMatch(des1,f1.des,k=2)
+
+        #     ret=[]
+        #     idx1,idx2=[],[]
+
+        #     pose=None
+        #     for m,n in matches:
+        #         if m.distance <0.75*n.distance:
+        #             if m.distance < 10:
+                        
+
+        #                 idx1.append(m.trainIdx)
+        #                 idx2.append(m.queryIdx)
+                        
+        #                 kp1=f1.kps[m.trainIdx]
+        #                 kp2=kps1[m.queryIdx]
+
+        #                 # kp1[idx]-> the keypoint in previous frame with id =idx            
+        #                 ret.append((kp1,kp2))
+            
+        #     ret=np.array(ret).astype(np.float32)
+        #     idx1=np.array(idx1)
+        #     idx2=np.array(idx2)
+        #     ransac=RANSAC(ret,Transformation(),8,0.05,100)
+        #     model,inliers,error=ransac.solve()
+            
+        #     ret=ret[inliers]
+        #     idx1=idx1[inliers]
+        #     idx2=idx2[inliers]
+    
+
+        #     pose=extractRt(model)
+        #     point_p=frames_triangulation(f1, kps1, idx1, idx2, pose)
+        #     diff=ret[:,1,:]-point_p[:3,:].T
+
+        #     # mean=np.mean(diff,axis=0)
+
+        #     # np.outer(kp2[:,i]-muy.T,kp1[:,i]-mux.T)
+        #     cov=np.cov((diff).T)
+        #     # print(cov)
+
+        #     eg= np.linalg.eigvals(cov)
+           
+        #     if eg[0]<initial_eg:
+        #         f2.kps = f2.kps[~mask[:, 0]]
+        #         f2.des = f2.des[~mask[:, 0]]
+                
+        #         mask=mask.T
+        #         f2.label = f2.label[~mask[:, 0]]
+        #     else:
+        #         continue
+                
+
+        #     # cond= np.linalg.cond(cov)
+
+
+
+
+
+
+        #     # kps1=f2.kps[mask]
+        # print(random_labels)
+    
+        
 
 
 
@@ -286,18 +403,18 @@ def GICP(cloud2,cloud1):
 
 
 class Frame(object):
-    def __init__(self,mapp,img,depth,K):
+    def __init__(self,mapp,img,depth,mod_depth,K):
         
         
         self.cloud=to_3D(depth,K)
 
         
-
+        # moddepth = np.mean(depth,axis=2)
         depth_Z= depth.reshape((-1,1))    
         depth_Z = np.float32(depth_Z)
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-        n = 10 # this need to be tune
-        ret,label,center=cv2.kmeans(depth_Z,n,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
+        self.sample = 30 # this need to be tune
+        ret,label,center=cv2.kmeans(depth_Z,self.sample,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
         label_img=label.reshape(depth.shape)
         
         self.pts,self.des,self.label=extract(img,depth,label_img)

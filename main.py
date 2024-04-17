@@ -82,12 +82,12 @@ G_localization_flag=False
 
 
 
-def process_img(img,depth):
+def process_img(img,depth,mod_depth):
     global kFrame,G_localization_flag
     
         
     # creating frame object
-    frame=Frame(mapp,img,depth,K)
+    frame=Frame(mapp,img,depth,mod_depth,K)
     if G_localization_flag:
         bool_flag=global_localization(mapp,frame,0.6)
         disp(img,"RGB")
@@ -130,13 +130,20 @@ def process_img(img,depth):
     
     
     
-    point_p=match_by_segmentation(f_c,f_p)
+    idx1,idx2,pose=match_by_segmentation(f_c,f_p)
+    if idx1 is None:
+        return None
+        # disp(img,"RGB")
+        # disp(depth,"Depth")
+        # return
     #initialize pose of each frame
-    # idx2,idx1,pose=match(f_c,f_p)
-    idx1,idx2,pose=match(f_c,f_p)
+    
+    
+    idx1_t,idx2_t,pose=match(f_c,f_p)
+    # idx1,idx2,pose=match(f_c,f_p)
 
     
-    f_c.pose=np.dot(pose,f_p.pose)
+    # f_c.pose=np.dot(pose,f_p.pose)
 
     # if mapp.keyframes:
     #     print("Keyframe ID: ",len(mapp.keyframes))
@@ -198,14 +205,24 @@ def process_img(img,depth):
         u_c,v_c,_=denormalize(kp2,f_c.K)
         # u_p,v_p,_=kp1
         r=5
-        pt1=(u_c-r,v_c-r)
-        pt2=(u_c+r,v_c+r)
+        pt1=(u_p-r,v_p-r)
+        pt2=(u_p+r,v_p+r)
                 
 
         cv2.rectangle(img,pt1,pt2,(0,0,255))
        
-        cv2.circle(img,(u_c,v_c),color=(0,255,0),radius=3)
-        cv2.line(img,(u_c,v_c),(u_p,v_p),color=(255,0,0))
+        cv2.circle(img,(u_p,v_p),color=(0,255,0),radius=3)
+        cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
+
+    
+    for kp1,kp2 in zip(f_p.kps[idx2_t],f_c.kps[idx1_t]):
+        u_p,v_p,_=denormalize(kp1,f_p.K)
+        u_c,v_c,_=denormalize(kp2,f_c.K)
+        # u_p,v_p,_=kp1
+        
+       
+        cv2.circle(img,(u_c,v_c),color=(255,0,255),radius=3)
+        # cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
 
     
     
@@ -237,10 +254,10 @@ if __name__ == "__main__":
 
         frame=cv2.imread(dataset_path+ilist[i]) # 8 bit image
         depth=cv2.imread(dataset_path+dlist[i],-1) # 16 bit monochorme image
+        mod_depth=cv2.imread(dataset_path+dlist[i],0)
         
         
-        
-        process_img(frame,depth)
+        process_img(frame,depth,mod_depth)
 
 
         if frame is None:
