@@ -4,22 +4,108 @@ import numpy as np
 from utils import *
 import matplotlib.pyplot as plt
 
+datas=[]
+
+
+def non_empty_values(data):
+    global datas
+    if isinstance(data, tuple):
+        for item in data:
+            non_empty_values(item)
+    elif data is not None:
+       datas.append(data) 
+
+
+
+
+def maximum_hist(hist,bins):
+   
+    hist=np.array(hist)
+    bins=np.array(bins)
+    # print("hello",hist)
+    # print("gelo",bins)
+    max_hist=[]
+    max_bins=[]
+    for i  in range(1,hist.shape[0]-1):
+        y_prev=hist[i-1]
+        y_next=hist[i+1]
+        if hist[i]>y_next and hist[i]>y_prev:
+            max_hist.append(hist[i])
+            max_bins.append(bins[i])
+    
+    return max_hist,max_bins
+
+
+def max_split(hist,bins):
+    if len(bins) < 2 or abs(bins[0]-bins[-1])<200:
+        if len(bins)==0:
+            return
+        return hist,bins 
+    else:
+        # print(len(bins),abs(bins[0]-bins[-1]))
+        for i in range(len(bins)-1):
+            
+            if abs(bins[i+1]-bins[i])>200:
+                breakpoint=i
+                break
+
+        #  = i
+        left_half_hist = hist[:breakpoint+1]
+        left_half_bins = bins[:breakpoint+1]
+
+        left_max_hist,left_max_bins=maximum_hist(left_half_hist,left_half_bins)
+        # # print(left_max_bins)
+        right_half_hist = hist[breakpoint+1:]
+        right_half_bins = bins[breakpoint+1:]
+        right_max_hist,right_max_bins=maximum_hist(right_half_hist,right_half_bins)
+        # return max_split(right_half_hist,right_half_bins)
+        return max_split(right_max_hist,right_max_bins), max_split(left_max_hist,left_max_bins)
+
 
 
 
 
 def process_img(img,depth,mod_depth):
-
+    global datas
     depth_Z=depth.flatten()
     depth_Z=depth_Z[~(depth_Z==0)]
-    hist, bins = np.histogram(depth_Z, bins=10000, range=[0,10000])
+    hist, bins = np.histogram(depth_Z, bins=depth_Z.shape[0], range=[0,depth_Z.shape[0]])
+    plt.plot(hist, color='black')
+    
+    max_hist,max_bins=maximum_hist(hist,bins)
+
+
+    plt.scatter(max_bins,max_hist, color='red')
+    T=40
+    k=len(max_hist)
+
+    results=max_split(max_hist,max_bins)
+
+    datas=[]
+    non_empty_values(results)
+    print(datas)
+    my_hist=[]
+    my_bin=[]
+    for i in range(len(datas)):
+        if i%2==0:
+            my_hist.append(datas[i])
+        else:
+            my_bin.append(datas[i])
+    
+    
+    plt.scatter(my_bin,my_hist, color='green')
+
+
+
+
+
 
     # Plot the histogram
-    plt.plot(hist, color='black')
+    
     plt.xlabel('Pixel Intensity')
     plt.ylabel('Frequency')
     plt.title('Histogram of Grayscale Frame')
-    plt.xlim([0, 10000])
+    plt.xlim([0, depth_Z.shape[0]])
 
     # Display the plot
     plt.pause(0.01)
