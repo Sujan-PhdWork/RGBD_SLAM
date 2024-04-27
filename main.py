@@ -208,9 +208,14 @@ def process_img(img,depth):
         cv2.line(img,(u_c,v_c),(u_p,v_p),color=(255,0,0))
 
     
-    
+    # segment_colors = np.random.randint(0, 256, (f_c.sample, 3), dtype=np.uint8)
+
+    # colored_segmented_data = segment_colors[labels.flatten()]
+    # colored_segmented_img = colored_segmented_data.reshape(depth.shape[0],depth.shape[1], 3)
+
     disp(img,"RGB")
     disp(depth,"Depth")
+    disp(f_c.colored_segmented_img,"kmean")
     # frame.id>20:
     # mapp.display()
     # del frame

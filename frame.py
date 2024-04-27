@@ -296,11 +296,18 @@ class Frame(object):
         depth_Z= depth.reshape((-1,1))    
         depth_Z = np.float32(depth_Z)
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-        n = 10 # this need to be tune
-        ret,label,center=cv2.kmeans(depth_Z,n,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
-        label_img=label.reshape(depth.shape)
-        
+        self.sample = 10 # this need to be tune
+        ret,labels,centers=cv2.kmeans(depth_Z,self.sample,None,criteria,50,cv2.KMEANS_RANDOM_CENTERS)
+        # self.label_img=labels.reshape(depth.shape)
+        centers = np.uint8(centers)
+        segmented_data = centers[labels.flatten()]
+        label_img=segmented_data.reshape(depth.shape)
+        segment_colors = np.random.randint(0, 256, (self.sample, 3), dtype=np.uint8)
+        colored_segmented_data = segment_colors[labels.flatten()]
+        self.colored_segmented_img = colored_segmented_data.reshape(depth.shape[0],depth.shape[1], 3)
+
         self.pts,self.des,self.label=extract(img,depth,label_img)
+
 
     
         # center = np.uint8(center)
