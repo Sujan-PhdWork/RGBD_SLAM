@@ -14,9 +14,17 @@ def region_growing(frame: np.ndarray)->np.ndarray:
 
     G_W=cv2.bitwise_or(L_map,T_map, mask=None)
 
-    G_W=G_E* G_W
+    G_W=G_E*G_W
 
-    # Section3.2seed point selection
+    # Section3.2 Seed point selection
+    # otsu_th= otsu_calc(G_W)
+    seeds=seeds_selection(G_W,otsu_th)
+
+
+    
+    
+    print(len(seeds))
+
  
 
     # otsu_th=12.00
@@ -29,6 +37,7 @@ def region_growing(frame: np.ndarray)->np.ndarray:
     
 
     cv2.imshow("colormap_Grad",G_W)
+    return seeds
 
 
 def color_gradient_map(frame):
@@ -36,14 +45,14 @@ def color_gradient_map(frame):
 
     ddepth = cv2.CV_64F
     
-    d_xr = cv2.Sobel(r, ddepth, 1, 0, ksize=3) 
-    d_yr = cv2.Sobel(r, ddepth, 0, 1, ksize=3)
+    d_xr = cv2.Sobel(r, ddepth, 1, 0, ksize=1) 
+    d_yr = cv2.Sobel(r, ddepth, 0, 1, ksize=1)
 
-    d_xg = cv2.Sobel(g, ddepth, 1, 0, ksize=3) 
-    d_yg = cv2.Sobel(g, ddepth, 0, 1, ksize=3)
+    d_xg = cv2.Sobel(g, ddepth, 1, 0, ksize=1) 
+    d_yg = cv2.Sobel(g, ddepth, 0, 1, ksize=1)
 
-    d_xb = cv2.Sobel(b, ddepth, 1, 0, ksize=3) 
-    d_yb = cv2.Sobel(b, ddepth, 0, 1, ksize=3)
+    d_xb = cv2.Sobel(b, ddepth, 1, 0, ksize=1) 
+    d_yb = cv2.Sobel(b, ddepth, 0, 1, ksize=1)
 
 
     p=d_xr**2+d_xg**2+d_xb**2
@@ -101,8 +110,8 @@ def otsu_calc(grad_map):
     threshold = 0  # Optimal threshold
 
     #   # Calculate total mean intensity
-    for i in range(L):
-        mu_t += distnict_numbers[i] * normalized_hist[i]
+    
+    mu_t += np.sum(distnict_numbers * normalized_hist)
 
     for i in range(L):
         weight_b += normalized_hist[i]
@@ -150,9 +159,9 @@ def gray_level_contrast(grad_map: np.ndarray):
     return normalized_image
 
 
-def Line_filed_map(grad_map: np.ndarray, TL=0.1,TH=0.8):
+def Line_filed_map(grad_map: np.ndarray, TL=0.2,TH=0.7):
 
-    line_field_map = np.zeros_like(grad_map, dtype=np.uint8)
+    line_field_map = np.zeros_like(grad_map, dtype=np.float32)
 
     # Apply high threshold
     line_field_map[grad_map > TH] = 1
@@ -171,16 +180,39 @@ def Line_filed_map(grad_map: np.ndarray, TL=0.1,TH=0.8):
                 if nl:
                     line_field_map[i, j] = 1
 
-    return line_field_map*255
+    return line_field_map
 
 def Thresh_map(grad_map,otsu_th):
     
-    Threshold_map = np.zeros_like(grad_map, dtype=np.uint8)
+    Threshold_map = np.zeros_like(grad_map, dtype=np.float32)
     Threshold_map[grad_map>0.25*otsu_th]=1
     
-    return Threshold_map*255
+    return Threshold_map
+
+def seeds_selection(grad_map,otsu_th,min_seed_size=2000):
+    
+    lowest_gradient = np.zeros_like(grad_map, dtype=np.uint8)
+    
+    lowest_gradient[grad_map<0.1*otsu_th]=1
+    seeds=[]
+    while True:
+        i = np.random.randint(1, grad_map.shape[0]-1)
+        j = np.random.randint(1, grad_map.shape[1]-1)
+        
+        nl=lowest_gradient[i - 1, j] == 1 and \
+            lowest_gradient[i + 1, j] == 1 and \
+                lowest_gradient[i, j - 1] == 1 and \
+                    lowest_gradient[i, j + 1] == 1
+
+        if nl:
+            seeds.append((j,i))
+        if len(seeds)>= min_seed_size:
+            return seeds
 
 
+
+    
+    
     
 
 
