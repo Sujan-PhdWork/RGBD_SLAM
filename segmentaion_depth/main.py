@@ -16,7 +16,7 @@ def process_img(frame,depth):
     
     erode_depth=morph_operation(depth_mod)
     colored_depth=depth_to_rgb_like(erode_depth)
-    region_growing(colored_depth)
+    region_growing(frame)
 
 
 

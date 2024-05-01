@@ -4,18 +4,31 @@ import cv2
 def region_growing(frame: np.ndarray)->np.ndarray:
     
     grad_map=color_gradient_map(frame)
-    otsu_th= otsu_calc(grad_map,thresh=1)
+    
+    G_E=gray_level_contrast(grad_map)
+    otsu_th= otsu_calc(G_E)
+
+    L_map=Line_filed_map(G_E)
+
+    T_map= Thresh_map(G_E,otsu_th)
+
+    G_W=cv2.bitwise_or(L_map,T_map, mask=None)
+
+    G_W=G_E* G_W
+
+    # Section3.2seed point selection
+ 
 
     # otsu_th=12.00
-    grad_copy_map=grad_map.copy()
+    # grad_copy_map=grad_map.copy()
 
-    grad_copy_map[grad_map<0.09*otsu_th]=0
-    grad_copy_map[grad_map>0.09*otsu_th]=255   
+    # grad_copy_map[grad_map<0.09*otsu_th]=0
+    # grad_copy_map[grad_map>0.09*otsu_th]=255   
 
     
     
 
-    cv2.imshow("colormap_Grad",grad_copy_map)
+    cv2.imshow("colormap_Grad",G_W)
 
 
 def color_gradient_map(frame):
@@ -23,14 +36,14 @@ def color_gradient_map(frame):
 
     ddepth = cv2.CV_64F
     
-    d_xr = cv2.Sobel(r, ddepth, 1, 0, ksize=1) 
-    d_yr = cv2.Sobel(r, ddepth, 0, 1, ksize=1)
+    d_xr = cv2.Sobel(r, ddepth, 1, 0, ksize=3) 
+    d_yr = cv2.Sobel(r, ddepth, 0, 1, ksize=3)
 
-    d_xg = cv2.Sobel(g, ddepth, 1, 0, ksize=1) 
-    d_yg = cv2.Sobel(g, ddepth, 0, 1, ksize=1)
+    d_xg = cv2.Sobel(g, ddepth, 1, 0, ksize=3) 
+    d_yg = cv2.Sobel(g, ddepth, 0, 1, ksize=3)
 
-    d_xb = cv2.Sobel(b, ddepth, 1, 0, ksize=1) 
-    d_yb = cv2.Sobel(b, ddepth, 0, 1, ksize=1)
+    d_xb = cv2.Sobel(b, ddepth, 1, 0, ksize=3) 
+    d_yb = cv2.Sobel(b, ddepth, 0, 1, ksize=3)
 
 
     p=d_xr**2+d_xg**2+d_xb**2
@@ -44,9 +57,9 @@ def color_gradient_map(frame):
     return G
 
 
-def otsu_calc(grad_map,thresh=1):
+def otsu_calc(grad_map):
 
-    grad_map=np.round(grad_map,0)
+    # grad_map=np.round(grad_map,0)
     # grad_map=grad_map.astype(np.uint16)
 
 
@@ -119,14 +132,55 @@ def otsu_calc(grad_map,thresh=1):
 
     return threshold
         
+def gray_level_contrast(grad_map: np.ndarray):
+
+    max_value=np.max(grad_map)
+    normalized_image = np.where(grad_map < 0.1 * max_value, 0, grad_map)
+    normalized_image = np.where(grad_map > 0.9 * max_value, max_value, normalized_image)
+    normalized_image = (normalized_image - 0.1 * max_value) / ((0.9 - 0.1) * max_value)
 
 
-
-
-
-
-
+    #normalized_image - (low_threshold * max_value): 
+    #This subtracts the calculated threshold value 
+    #from each pixel in the normalized_image array. 
+    #This effectively shifts the range of values 
+    #that need to be scaled from low_threshold * max_value to 
+    #max_value down to 0 to max_value - (low_threshold * max_value).
     
+    return normalized_image
+
+
+def Line_filed_map(grad_map: np.ndarray, TL=0.1,TH=0.8):
+
+    line_field_map = np.zeros_like(grad_map, dtype=np.uint8)
+
+    # Apply high threshold
+    line_field_map[grad_map > TH] = 1
+
+    # Apply low threshold and connectivity check
+    for i in range(1, grad_map.shape[0] - 1):
+        for j in range(1, grad_map.shape[1] - 1):
+            
+            
+            # Check for low threshold and connected neighbors
+            if grad_map[i, j] > TL:
+                nl=line_field_map[i - 1, j] == 1 or \
+                line_field_map[i + 1, j] == 1 or \
+                    line_field_map[i, j - 1] == 1 or \
+                        line_field_map[i, j + 1] == 1
+                if nl:
+                    line_field_map[i, j] = 1
+
+    return line_field_map*255
+
+def Thresh_map(grad_map,otsu_th):
+    
+    Threshold_map = np.zeros_like(grad_map, dtype=np.uint8)
+    Threshold_map[grad_map>0.25*otsu_th]=1
+    
+    return Threshold_map*255
+
+
     
 
 
