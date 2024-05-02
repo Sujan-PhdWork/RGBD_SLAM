@@ -3,6 +3,7 @@ import numpy as np
 from depth_to_rgb_like import depth_to_rgb_like
 from nd_6_sigma import nd_6_sigma
 from morph_operation import morph_operation
+from region_growing import region_growing
 
 
 
@@ -15,7 +16,10 @@ def process_img(frame,depth):
     
     erode_depth=morph_operation(depth_mod)
     colored_depth=depth_to_rgb_like(erode_depth)
-
+    seeds=region_growing(colored_depth)
+    
+    for center in seeds:
+        cv2.circle(depth, center, 2, (255,0,0), -1)
 
 
 
