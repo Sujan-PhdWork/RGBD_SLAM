@@ -5,9 +5,9 @@ from ransac import *
 from utils import normalize
 import joblib
 import pcl
+from segmentation import segmentation
 
-# model_filename = 'BoW/kmeans_model.joblib'
-# kmeans_loaded = joblib.load(model_filename)
+
 
 
 IRt=np.eye(4)
@@ -153,7 +153,7 @@ def match_by_segmentation(f1,f2):
 
 
     
-    frame_lable=np.unique(f2.label)
+    frame_label=np.unique(f2.label)
     
     bf=cv2.BFMatcher(cv2.NORM_HAMMING)
     matches=bf.knnMatch(f1.des,f2.des,k=2)
@@ -290,21 +290,22 @@ class Frame(object):
         
         
         self.cloud=to_3D(depth,K)
-
         
+        label_img,self.colored_segmented_img=segmentation(img,viz=True)
 
-        depth_Z= depth.reshape((-1,1))    
-        depth_Z = np.float32(depth_Z)
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-        self.sample = 10 # this need to be tune
-        ret,labels,centers=cv2.kmeans(depth_Z,self.sample,None,criteria,50,cv2.KMEANS_RANDOM_CENTERS)
+
+        # depth_Z= depth.reshape((-1,1))    
+        # depth_Z = np.float32(depth_Z)
+        # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        # self.sample = 10 # this need to be tune
+        # ret,labels,centers=cv2.kmeans(depth_Z,self.sample,None,criteria,50,cv2.KMEANS_RANDOM_CENTERS)
         # self.label_img=labels.reshape(depth.shape)
-        centers = np.uint8(centers)
-        segmented_data = centers[labels.flatten()]
-        label_img=segmented_data.reshape(depth.shape)
-        segment_colors = np.random.randint(0, 256, (self.sample, 3), dtype=np.uint8)
-        colored_segmented_data = segment_colors[labels.flatten()]
-        self.colored_segmented_img = colored_segmented_data.reshape(depth.shape[0],depth.shape[1], 3)
+        # centers = np.uint8(centers)
+        # segmented_data = centers[labels.flatten()]
+        # label_img=segmented_data.reshape(depth.shape)
+        # segment_colors = np.random.randint(0, 256, (self.sample, 3), dtype=np.uint8)
+        # colored_segmented_data = segment_colors[labels.flatten()]
+        # self.colored_segmented_img = colored_segmented_data.reshape(depth.shape[0],depth.shape[1], 3)
 
         self.pts,self.des,self.label=extract(img,depth,label_img)
 
