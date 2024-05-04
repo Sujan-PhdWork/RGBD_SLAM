@@ -22,52 +22,82 @@ def process_img(frame):
     height=frame.shape[0]
     # dim = (width, height)
 
-    myNewImage=cv2.resize()
+    # myNewImage=cv2.resize()
     myNewImage=frame
 
     # cfg_pan.MODEL.DEVICE = "cpu" # if you have Cuda, dont need this line
     predictor= DefaultPredictor(cfg_pan)
 
-    t=time.time()
-    predictions=predictor(myNewImage)
-    eps=time.time()-t
-    print(eps)
+    # t=time.time()
+    # predictions=predictor(frame)
+    # eps=time.time()-t
+    # print(eps)
     instances=predictions["instances"].to("cpu")
+    detected_class_indexes = instances.pred_classes
+    detected_scores= instances.scores
+
+    # metadata = MetadataCatalog.get(cfg_pan.DATASETS.TRAIN[0])
+    # class_catalog = metadata.thing_classes  
+    
+    # for idx in detected_class_indexes:
+    #     class_name=class_catalog[idx]
+    #     print(class_name)
+
 
     # print(instances.)
     # print(predictions["pred_masks"])
 
-    mask_image=instances.pred_masks.numpy()
+    # print(instances)
 
-    mask_image=np.sum(mask_image,axis=0)
-    mask_image=mask_image.astype(np.uint8)
+    lable_image=np.zeros([height,width],dtype=np.int8)
+    
+
+    mask_image=instances.pred_masks.numpy()
+    for i in range(mask_image.shape[0]):
+        if detected_scores[i]>0.95:
+            lable_image[mask_image[i]]=i+1
+
+    
+    segment_colors = np.random.randint(0, 256, (len(detected_class_indexes)+1, 3), dtype=np.uint8)
+    colored_segmented_data = segment_colors[lable_image.flatten()]
+    colored_segmented_img = colored_segmented_data.reshape(height,width, 3)
+
+    # mask_image=mask_image[-1,:,:]
+    # mask_image=np.sum(mask_image,axis=0)
+    # lable_image=lable_image.astype(np.uint8)
 
     cv2.imshow("img", myNewImage)
-    cv2.imshow("predict", mask_image*255)
+    cv2.imshow("predict", colored_segmented_img)
 
 
 
+imagePath = "demo.jpg"
+frame = cv2.imread(imagePath)
 
-vid = cv2.VideoCapture(0) 
 
-while(True): 
+process_img(frame)
+
+# vid = cv2.VideoCapture(0) 
+
+# while(True): 
       
-    # Capture the video frame 
-    # by frame 
-    ret, frame = vid.read() 
+#     # Capture the video frame 
+#     # by frame 
+#     ret, frame = vid.read() 
     
-    process_img(frame)
+#     process_img(frame)
 
-    # Display the resulting frame 
-    # cv2.imshow('frame', frame) 
+#     # Display the resulting frame 
+#     # cv2.imshow('frame', frame) 
       
-    # the 'q' button is set as the 
-    # quitting button you may use any 
-    # desired button of your choice 
-    if cv2.waitKey(1) & 0xFF == ord('q'): 
-        break
+#     # the 'q' button is set as the 
+#     # quitting button you may use any 
+#     # desired button of your choice 
+#     if cv2.waitKey(1) & 0xFF == ord('q'): 
+#         break
   
-# After the loop release the cap object 
-vid.release() 
-# Destroy all the windows 
+# # After the loop release the cap object 
+# vid.release() 
+# # Destroy all the windows 
+cv2.waitKey(0)
 cv2.destroyAllWindows() 
