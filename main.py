@@ -59,18 +59,18 @@ mapp=Map()
 # th1=900.0
 
 # # Computing keyframe
-Local_map=LocalMap_Thread()
+# Local_map=LocalMap_Thread()
 # Local_map.create_Thread(mapp)
-kFrame=None
+# kFrame=None
 
 # Full_MAP=FulllMap_Thread()
 # Full_MAP.create_Thread(mapp)
 # kFrame=None
 
-th2=0.6
-Loop=Loop_Thread()
+# th2=0.6
+# Loop=Loop_Thread()
 # Loop.create_Thread(mapp,th2)
-G_localization_flag=False
+# G_localization_flag=False
 
 
 
@@ -88,15 +88,15 @@ def process_img(img,depth):
         
     # creating frame object
     frame=Frame(mapp,img,depth,K)
-    if G_localization_flag:
-        bool_flag=global_localization(mapp,frame,0.6)
-        disp(img,"RGB")
-        disp(depth,"Depth")
-        if not bool_flag:
-            return
-        G_localization_flag=False
-        mapp.frames.append(frame)
-        return
+    # if G_localization_flag:
+    #     bool_flag=global_localization(mapp,frame,0.6)
+    #     disp(img,"RGB")
+    #     disp(depth,"Depth")
+    #     if not bool_flag:
+    #         return
+    #     G_localization_flag=False
+    #     mapp.frames.append(frame)
+    #     return
             
 
     mapp.frames.append(frame)
@@ -108,7 +108,7 @@ def process_img(img,depth):
         frame.pose=Int_pose
         # frame.Rpose=Int_pose
         frame.isKey=True
-        kFrame=Keyframe(frame)
+        # kFrame=Keyframe(frame)
         return
     
 
@@ -126,14 +126,14 @@ def process_img(img,depth):
     #Matching between current_frame and keyframe
     
 
-    Kidx2,Kidx1,Kpose=match(f_c,kFrame.frame)
+    # Kidx2,Kidx1,Kpose=match(f_c,kFrame.frame)
     
     
     
-    point_p=match_by_segmentation(f_c,f_p)
+    idx1,idx2,pose,idx1_t,idx2_t=match_by_segmentation(f_c,f_p)
     #initialize pose of each frame
     # idx2,idx1,pose=match(f_c,f_p)
-    idx1,idx2,pose=match(f_c,f_p)
+    # idx1_t,idx2_t,pose=match(f_c,f_p)
 
     
     f_c.pose=np.dot(pose,f_p.pose)
@@ -143,11 +143,11 @@ def process_img(img,depth):
 
     # Take the next frame as an reference for ratio
 
-    if (frame.id-kFrame.id)==1:
-        # f_c.pose=Kpose
-        kFrame.add_frames(f_c)
-        # print(kFrame.id)
-        kFrame.nmpts=len(Kidx1)
+    # if (frame.id-kFrame.id)==1:
+    #     # f_c.pose=Kpose
+    #     kFrame.add_frames(f_c)
+    #     # print(kFrame.id)
+    #     kFrame.nmpts=len(Kidx1)
     
     # else:
         # with Lock():
@@ -190,7 +190,9 @@ def process_img(img,depth):
 
     # # displaying features on RGB image
 
-   
+    # for i in range(point_p.shape[0]):
+    #    u_p,v_p= denormalize2(point_p[i],f_p.K)
+    #    cv2.circle(img,(u_p,v_p),color=(0,255,255),radius=3,thickness=-1)
 
 
     for kp1,kp2 in zip(f_p.kps[idx2],f_c.kps[idx1]):
@@ -207,7 +209,16 @@ def process_img(img,depth):
         cv2.circle(img,(u_c,v_c),color=(0,255,0),radius=3)
         cv2.line(img,(u_c,v_c),(u_p,v_p),color=(255,0,0))
 
-    
+    for kp1,kp2 in zip(f_p.kps[idx2_t],f_c.kps[idx1_t]):
+        u_p,v_p,_=denormalize(kp1,f_p.K)
+        u_c,v_c,_=denormalize(kp2,f_c.K)
+        # u_p,v_p,_=kp1
+        
+       
+        cv2.circle(img,(u_c,v_c),color=(255,0,255),radius=1)
+        # cv2.line(img,(u_p,v_p),(u_c,v_c),color=(255,0,0))
+
+
     # segment_colors = np.random.randint(0, 256, (f_c.sample, 3), dtype=np.uint8)
 
     # colored_segmented_data = segment_colors[labels.flatten()]
@@ -228,8 +239,9 @@ def optimize_frame(mapp):
 
 
 if __name__ == "__main__":
-    dataset_path='../dataset/rgbd_dataset_freiburg3_walking_xyz_validation/'
-    # dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
+    # dataset_path='../dataset/rgbd_dataset_freiburg3_walking_xyz_validation/'
+    dataset_path='../dataset/rgbd_dataset_freiburg3_walking_static/'
+    # dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
 
@@ -252,7 +264,7 @@ if __name__ == "__main__":
             print("End of frame")
             break
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(0) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
     

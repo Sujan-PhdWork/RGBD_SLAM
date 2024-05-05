@@ -2,6 +2,7 @@ import torch
 import detectron2
 import numpy as np
 import time
+import cv2
 from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
@@ -35,7 +36,13 @@ def segmentation(frame: np.ndarray, prob=0.95,viz=True):
     detected_scores= instances.scores
 
     mask_image=instances.pred_masks.numpy()
+    mask_image=mask_image.astype(np.uint8)
+    kernel = np.ones((3, 3), np.uint8) 
+    for i in range(mask_image.shape[0]):
+        mask_image[i]=cv2.dilate(mask_image[i], kernel, iterations=1) 
 
+    mask_image=mask_image==1
+    # cv2.imshow("ji",mask_image[0]*255)
 
 
     lable_image=np.zeros([h,w],dtype=np.int8)

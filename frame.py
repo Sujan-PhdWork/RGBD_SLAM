@@ -7,7 +7,8 @@ import joblib
 import pcl
 from segmentation import segmentation
 
-
+# model_filename = 'BoW/kmeans_model.joblib'
+# kmeans_loaded = joblib.load(model_filename)
 
 
 IRt=np.eye(4)
@@ -60,6 +61,8 @@ def to_3D(depth,K):
 def extract(img,depth,label_img):
     
     orb=cv2.ORB_create()
+    
+    
     feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
     # feats=cv2.goodFeaturesToTrack(img.astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
 
@@ -111,12 +114,11 @@ def triangulate(pose1,pose2,pts1,pts2):
      return ret.T
 
 
-def frames_triangulation(f1, f2, idx1, idx2, pose):
-    # Extract the keypoints and descriptors for the corresponding indices
-    # print(f1.kps[idx1].shape)
+def frames_triangulation(f1, kps, idx1, idx2, pose):
+    
     
     kps1 = f1.kps[idx1]
-    kps2 = f2.kps[idx2]
+    kps2 = kps[idx2]
 
     kps1 /= kps1[:, 2].reshape(-1, 1)
     kps2 /= kps2[:, 2].reshape(-1, 1)
@@ -124,15 +126,23 @@ def frames_triangulation(f1, f2, idx1, idx2, pose):
     kps1 = kps1[:, :2]
     kps2 = kps2[:, :2]
 
-
+    
+    
     P1=np.concatenate((np.eye(3), np.zeros((3, 1))), axis=1)
     # Triangulate the points
 
     pts4d=triangulate(np.eye(4),pose,kps2,kps1)
     pts4d /= pts4d[3, :]
 
+    # # Project the triangulated points back to the image plane
+    projected_pts1 = np.dot(P1, pts4d)
+    projected_pts2 = np.dot(pose[:3, :4], pts4d)
+
+    # # Normalize the projected points
+    projected_pts1 /= projected_pts1[2, :]
+    projected_pts2 /= projected_pts2[2, :]
     
-    return pts4d 
+    return pts4d,projected_pts2.T 
 
 
 
@@ -142,10 +152,9 @@ def match_by_segmentation(f1,f2):
     # f1 is current frame f2 is previous frame
     ## we will first check how many labels are in last frame
     ## we will use all the points to calculate the transformation
-    ## we will create a function that will take the transformation and return the 3d points
-        ## ->(will check later) We will reject bad triangulation 
+    # we will use this transformation to calculate the projection matrix of the each frames
+    
     # we will then check the matched point triangulation depth and original depth
-    # for covariance measurement we will for now taking maximum condition number of the covariance matrix
     # if the covariance is less than threshold we will consider it as a good match
     # then we will take all the labels except an random one
     # and check if covariance is increase or decrease if its increase then we will reject all the point that are in that label
@@ -153,7 +162,7 @@ def match_by_segmentation(f1,f2):
 
 
     
-    frame_label=np.unique(f2.label)
+    n_label=np.unique(f2.label)
     
     bf=cv2.BFMatcher(cv2.NORM_HAMMING)
     matches=bf.knnMatch(f1.des,f2.des,k=2)
@@ -184,46 +193,166 @@ def match_by_segmentation(f1,f2):
     ret=ret[inliers]
     idx1=idx1[inliers]
     idx2=idx2[inliers]
-    
+
+    idx1_t=idx1.copy()
+    idx2_t=idx2.copy()
 
     pose=extractRt(model)
+    point_p=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
 
-
-
-    # Points on the previous frame
-
-    point_p=frames_triangulation(f1, f2, idx1, idx2, pose)
-
-
-    # good_pts4d=np.abs(point_p[3,:]>0.005) & (point_p[2,:]>0)
-
-    # print(point_p.shape,good_pts4d.shape)
-
-    # point_p=point_p[:,good_pts4d]
-    # ret=ret[good_pts4d]
-
+    error_list=[]
 
     diff=ret[:,1,:]-point_p[:3,:].T
+    initial_error=np.sqrt(np.mean(np.sum(diff*diff, axis=1),axis=0))
+    error_list.append(initial_error)
+    print(initial_error)
 
-    mean=np.mean(diff,axis=0)
+    if initial_error<2.0:
+        return idx1,idx2,pose,idx1_t,idx2_t
 
-    # np.outer(kp2[:,i]-muy.T,kp1[:,i]-mux.T)
-    cov=np.cov((diff).T)
-    print(cov)
-
-    # eg= np.linalg.eigvals(cov)
-    cond= np.linalg.cond(cov)
-    # det=np.linalg.det(cov)
-    print(cond)
+    else:
 
 
-    if cond>0.7:
-        return idx1,idx2,pose
+        for i in range(len(n_label)):
+            if i==0:
+                continue
+            mask=f2.label==i
+            mask=mask.reshape(-1,1)
+            
+            mask=mask[idx2]
+            new_ret=ret[~mask[:,0]]
+            new_idx1=idx1[~mask[:,0]]
+            new_idx2=idx2[~mask[:,0]]
+            ransac=RANSAC(new_ret,Transformation(),8,0.05,100)
+            model,inliers,error=ransac.solve()
+                
+            new_ret=new_ret[inliers]
+            new_idx1=new_idx1[inliers]
+            new_idx2=new_idx2[inliers]
+
+
+            pose=extractRt(model)
+            point_p=frames_triangulation(f1, f2.kps, new_idx1, new_idx2, pose)
+
+            diff=new_ret[:,1,:]-point_p[:3,:].T
+            error=np.sqrt(np.mean(np.sum(diff*diff, axis=1),axis=0))
+            error_list.append(error)
+            
+            e_error=error-initial_error
+            if e_error > 0:
+                continue
+            else:
+                if abs(e_error)<2.0:
+                    continue
+                print("deleting label: ", i)
+                ret=new_ret
+                idx1=new_idx1
+                idx2=new_idx2
+                # initial_error=error
+            # else:
+            #     print("deleting label outer: ", i)
+            #     ret=new_ret
+            #     idx1=new_idx1
+            #     idx2=new_idx2
+
+                # print("deleting lebel ",i, eg[0])
+                
+                
+                # if eg[0]<0.5:
+                #     return idx1,idx2,pose
+            
+            
+
+    print(error_list)
+    return idx1,idx2,pose,idx1_t,idx2_t
+        # f1_label=f1.
+
+
+
+
+
+
+
+
+def match_by_segmentation_mod(f1,f2):
     
+    
+    # f1 is current frame f2 is previous frame
+    ## we will first check how many labels are in last frame
+    ## we will use all the points to calculate the transformation
+    # we will use this transformation to calculate the projection matrix of the each frames
+    
+    # we will then check the matched point triangulation depth and original depth
+    # if the covariance is less than threshold we will consider it as a good match
+    # then we will take all the labels except an random one
+    # and check if covariance is increase or decrease if its increase then we will reject all the point that are in that label
+    # if its decreases we will accept all the points that are in that label and make that segment as good segment
+
 
     
-    return point_p
-    # print(pts4d)
+    n_label=np.unique(f2.label)
+    
+    bf=cv2.BFMatcher(cv2.NORM_HAMMING)
+    matches=bf.knnMatch(f1.des,f2.des,k=2)
+    ret=[]
+    idx1,idx2=[],[]
+
+    pose=None
+    for m,n in matches:
+        if m.distance <0.75*n.distance:
+            if m.distance < 30:
+                
+
+                idx1.append(m.queryIdx)
+                idx2.append(m.trainIdx)
+                
+                kp1=f1.kps[m.queryIdx]
+                kp2=f2.kps[m.trainIdx]
+
+                # kp1[idx]-> the keypoint in previous frame with id =idx            
+                ret.append((kp1,kp2))
+    
+    ret=np.array(ret).astype(np.float32)
+    idx1=np.array(idx1)
+    idx2=np.array(idx2)
+    
+    ransac=RANSAC(ret,Transformation(),10,0.01,500)
+    model,inliers,error=ransac.solve()
+    ret=ret[inliers]
+    idx1=idx1[inliers]
+    idx2=idx2[inliers]
+
+    pose=extractRt(model)
+    point_p,pt_proj_c=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
+    
+    
+    good_pts4d=point_p[3,:]>0 & (np.abs(point_p[2,:])>0.005)
+
+
+    point_p=point_p[:,good_pts4d]
+    ret=ret[good_pts4d]
+    idx1=idx1[good_pts4d]
+    idx2=idx2[good_pts4d]
+    pt_proj_c=pt_proj_c[good_pts4d]
+    
+    mask=f2.label!=0
+    mask=mask.reshape(-1,1)
+            
+    mask=mask[idx2]
+    ret=ret[~mask[:,0]]
+    idx1=idx1[~mask[:,0]]
+    idx2=idx2[~mask[:,0]]
+
+    pt_proj_c=pt_proj_c[~mask[:,0]]
+
+
+
+    return idx1,idx2,pose,pt_proj_c
+        # f1_label=f1.
+
+
+
+
 
 
 
@@ -290,25 +419,12 @@ class Frame(object):
         
         
         self.cloud=to_3D(depth,K)
+
         
+
         label_img,self.colored_segmented_img=segmentation(img,viz=True)
-
-
-        # depth_Z= depth.reshape((-1,1))    
-        # depth_Z = np.float32(depth_Z)
-        # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-        # self.sample = 10 # this need to be tune
-        # ret,labels,centers=cv2.kmeans(depth_Z,self.sample,None,criteria,50,cv2.KMEANS_RANDOM_CENTERS)
-        # self.label_img=labels.reshape(depth.shape)
-        # centers = np.uint8(centers)
-        # segmented_data = centers[labels.flatten()]
-        # label_img=segmented_data.reshape(depth.shape)
-        # segment_colors = np.random.randint(0, 256, (self.sample, 3), dtype=np.uint8)
-        # colored_segmented_data = segment_colors[labels.flatten()]
-        # self.colored_segmented_img = colored_segmented_data.reshape(depth.shape[0],depth.shape[1], 3)
-
+        
         self.pts,self.des,self.label=extract(img,depth,label_img)
-
 
     
         # center = np.uint8(center)
