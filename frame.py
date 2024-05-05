@@ -60,14 +60,15 @@ def to_3D(depth,K):
 
 def extract(img,depth,label_img):
     
-    orb=cv2.ORB_create()
+    orb=cv2.ORB_create(nfeatures=3000,scaleFactor=2,nlevels=8,patchSize=21,edgeThreshold=21)
     
+    kps= orb.detect(img, None)
     
-    feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
+    # feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
     # feats=cv2.goodFeaturesToTrack(img.astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
 
     # print(feats)
-    kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
+    # kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
     
     # _size in numpy<1.75
     
