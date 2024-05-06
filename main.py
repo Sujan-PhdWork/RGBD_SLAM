@@ -53,23 +53,23 @@ Int_pose=np.array([[0.6053,    0.5335,   -0.5908,    1.2764],
 # Int_pose=np.eye(4)
 
 mapp=Map()
-# mapp.create_viewer()
+mapp.create_viewer()
 
 #keyframe Thresolding
 # th1=900.0
 
 # # Computing keyframe
-# Local_map=LocalMap_Thread()
-# Local_map.create_Thread(mapp)
+Local_map=LocalMap_Thread()
+Local_map.create_Thread(mapp)
+kFrame=None
+
+Full_MAP=FulllMap_Thread()
+Full_MAP.create_Thread(mapp)
 # kFrame=None
 
-# Full_MAP=FulllMap_Thread()
-# Full_MAP.create_Thread(mapp)
-# kFrame=None
-
-# th2=0.6
-# Loop=Loop_Thread()
-# Loop.create_Thread(mapp,th2)
+th2=0.6
+Loop=Loop_Thread()
+Loop.create_Thread(mapp,th2)
 # G_localization_flag=False
 
 
@@ -108,7 +108,7 @@ def process_img(img,depth):
         frame.pose=Int_pose
         # frame.Rpose=Int_pose
         frame.isKey=True
-        # kFrame=Keyframe(frame)
+        kFrame=Keyframe(frame)
         return
     
 
@@ -126,11 +126,13 @@ def process_img(img,depth):
     #Matching between current_frame and keyframe
     
 
-    # Kidx2,Kidx1,Kpose=match(f_c,kFrame.frame)
+    Kidx2,Kidx1,Kpose=match_by_segmentation(f_c,kFrame.frame)
     
     
     
-    idx1,idx2,pose,idx1_t,idx2_t=match_by_segmentation(f_c,f_p)
+    idx1,idx2,pose=match_by_segmentation(f_c,f_p)
+    
+    
     #initialize pose of each frame
     # idx2,idx1,pose=match(f_c,f_p)
     # idx1_t,idx2_t,pose=match(f_c,f_p)
@@ -143,47 +145,39 @@ def process_img(img,depth):
 
     # Take the next frame as an reference for ratio
 
-    # if (frame.id-kFrame.id)==1:
-    #     # f_c.pose=Kpose
-    #     kFrame.add_frames(f_c)
-    #     # print(kFrame.id)
-    #     kFrame.nmpts=len(Kidx1)
+    if (frame.id-kFrame.id)==1:
+        # f_c.pose=Kpose
+        kFrame.add_frames(f_c)
+        # print(kFrame.id)
+        kFrame.nmpts=len(Kidx1)
     
-    # else:
-        # with Lock():
-        #     flag=Local_map.lm.Acceptance_flag
-        #     # print(mapp.frames[2].pose)
+    else:
+        with Lock():
+            flag=Local_map.lm.Acceptance_flag
+            # print(mapp.frames[2].pose)
         # _,_,pose=match(f_c,f_p)
         
         
         
         
-        # M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
+        M_ratio=len(Kidx1)/kFrame.nmpts # Matching ratio
         
-        # if (M_ratio<0.8) and (flag):
-        #     if (M_ratio<0.05):
+        if (M_ratio<0.5) and (flag):
+        # Local_map.lm.CheckNewKeyframe=True
+            with Lock():
+                print("Key id:",f_c.id)
                 
-        #         print("Localization Lost.....")
-        #         G_localization_flag=True
-        #         return
-        #     # Local_map.lm.CheckNewKeyframe=True
-        #     else:
-        #         with Lock():
-        #             print("Key id:",f_c.id)
-                    
-        #             # Local_map.lm.NewKeyframes.append(kFrame)
-        #             # Local_map.lm.SetAcceptKeyFrames(False)
-        #             # Local_map.event.set()
-        #             # Full_MAP.event.set()
-                
-        #         f_c.isKey=True
-        #         f_p.pose=np.dot(Kpose,kFrame.frame.pose)
-                
-                
-        #         EDGE(mapp,kFrame.id,f_c.id,Kpose,0.2)
-        #         kFrame=Keyframe(f_c)
-        # else:
-        #     kFrame.add_frames(f_c)
+                Local_map.lm.NewKeyframes.append(kFrame)
+                Local_map.lm.SetAcceptKeyFrames(False)
+                # Local_map.event.set()
+                # Full_MAP.event.set()
+            
+            f_c.isKey=True
+            EDGE(mapp,kFrame.id,f_c.id,Kpose,0.02)
+            kFrame=Keyframe(f_c)
+            
+        else:
+            kFrame.add_frames(f_c)
         
 
 
@@ -209,10 +203,10 @@ def process_img(img,depth):
         cv2.circle(img,(u_c,v_c),color=(0,255,0),radius=3)
         cv2.line(img,(u_c,v_c),(u_p,v_p),color=(255,0,0))
 
-    for kp1,kp2 in zip(f_p.kps[idx2_t],f_c.kps[idx1_t]):
-        u_p,v_p,_=denormalize(kp1,f_p.K)
-        u_c,v_c,_=denormalize(kp2,f_c.K)
-        # u_p,v_p,_=kp1
+    # for kp1,kp2 in zip(f_p.kps[idx2_t],f_c.kps[idx1_t]):
+    #     u_p,v_p,_=denormalize(kp1,f_p.K)
+    #     u_c,v_c,_=denormalize(kp2,f_c.K)
+    #     # u_p,v_p,_=kp1
         
        
         cv2.circle(img,(u_c,v_c),color=(255,0,255),radius=1)
@@ -228,7 +222,7 @@ def process_img(img,depth):
     disp(depth,"Depth")
     disp(f_c.colored_segmented_img,"kmean")
     # frame.id>20:
-    # mapp.display()
+    mapp.display()
     # del frame
     # mapp.optimize()
 
@@ -240,8 +234,8 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     # dataset_path='../dataset/rgbd_dataset_freiburg3_walking_xyz_validation/'
-    dataset_path='../dataset/rgbd_dataset_freiburg3_walking_static/'
-    # dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+    # dataset_path='../dataset/rgbd_dataset_freiburg3_walking_static/'
+    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
 
@@ -264,7 +258,7 @@ if __name__ == "__main__":
             print("End of frame")
             break
         
-        if cv2.waitKey(0) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
     

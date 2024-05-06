@@ -6,6 +6,7 @@ from utils import normalize
 import joblib
 import pcl
 from segmentation import segmentation
+from PoseOptimization import PoseOptimization
 
 # model_filename = 'BoW/kmeans_model.joblib'
 # kmeans_loaded = joblib.load(model_filename)
@@ -162,7 +163,7 @@ def match_by_segmentation(f1,f2):
 
 
     
-    n_label=np.unique(f2.label)
+    n_label=np.unique(f1.label)
     
     bf=cv2.BFMatcher(cv2.NORM_HAMMING)
     matches=bf.knnMatch(f1.des,f2.des,k=2)
@@ -198,32 +199,68 @@ def match_by_segmentation(f1,f2):
     idx2_t=idx2.copy()
 
     pose=extractRt(model)
-    point_p=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
+    pose=np.linalg.inv(pose)
+    point_p,_=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
 
     error_list=[]
 
     diff=ret[:,1,:]-point_p[:3,:].T
+    
+    # errors=np.sqrt(np.sum(diff*diff, axis=1))
+    # mean = np.mean(errors)
+    # std = np.std(errors)
+
+    # # Calculate lower and upper bounds for 3 sigma
+    # lower_bound = mean - 6 * std
+    # upper_bound = mean + 6 * std
+
+    # mask=(errors >= lower_bound) & (errors <= upper_bound)
+
+    # idx1=idx1[mask]  
+    # idx2=idx2[mask]
+    # # pt_proj_c=pt_proj_c[mask]
+    # # print(errors[~mask])
+    # diff=diff[mask]
     initial_error=np.sqrt(np.mean(np.sum(diff*diff, axis=1),axis=0))
+    
+    
+
     error_list.append(initial_error)
     print(initial_error)
 
     if initial_error<2.0:
-        return idx1,idx2,pose,idx1_t,idx2_t
+        return idx1,idx2,pose
+
 
     else:
+        # masks=f1.label==0
+        # masks=masks.reshape(-1,1)
+        # ret=ret[masks[:,0]]
+        # idx1=idx1[masks[:,0]]
+        # idx2=idx2[masks[:,0]]
+        # ransac=RANSAC(new_ret,Transformation(),8,0.01,100)
+        # model,inliers,error=ransac.solve()
+        # ret=ret[inliers]
+        # idx1=idx1[inliers]
+        # idx2=idx2[inliers]
 
+        # pose=extractRt(model)
+        # pose=np.linalg.inv(pose)
+        # point_p,_=frames_triangulation(f1, f2.kps, new_idx1, new_idx2, pose_new)
 
+    
         for i in range(len(n_label)):
             if i==0:
                 continue
-            mask=f2.label==i
-            mask=mask.reshape(-1,1)
+            masks=f1.label==i
+            masks=masks.reshape(-1,1)
             
-            mask=mask[idx2]
-            new_ret=ret[~mask[:,0]]
-            new_idx1=idx1[~mask[:,0]]
-            new_idx2=idx2[~mask[:,0]]
-            ransac=RANSAC(new_ret,Transformation(),8,0.05,100)
+            masks=masks[idx1]
+            new_ret=ret[~masks[:,0]]
+            # print(new_ret)
+            new_idx1=idx1[~masks[:,0]]
+            new_idx2=idx2[~masks[:,0]]
+            ransac=RANSAC(new_ret,Transformation(),8,0.01,100)
             model,inliers,error=ransac.solve()
                 
             new_ret=new_ret[inliers]
@@ -232,22 +269,40 @@ def match_by_segmentation(f1,f2):
 
 
             pose=extractRt(model)
-            point_p=frames_triangulation(f1, f2.kps, new_idx1, new_idx2, pose)
+            pose=np.linalg.inv(pose)
+            point_p,_=frames_triangulation(f1, f2.kps, new_idx1, new_idx2, pose)
 
             diff=new_ret[:,1,:]-point_p[:3,:].T
+            # errors=np.sqrt(np.sum(diff*diff, axis=1))
+            # mean = np.mean(errors)
+            # std = np.std(errors)
+
+            # # Calculate lower and upper bounds for 3 sigma
+            # lower_bound = mean - 6 * std
+            # upper_bound = mean + 6 * std
+
+            # mask=(errors >= lower_bound) & (errors <= upper_bound)
+
+            # idx1=idx1[mask]  
+            # idx2=idx2[mask]
+            # # pt_proj_c=pt_proj_c[mask]
+            # # print(errors[~mask])
+            # diff=diff[mask]
             error=np.sqrt(np.mean(np.sum(diff*diff, axis=1),axis=0))
             error_list.append(error)
             
-            e_error=error-initial_error
-            if e_error > 0:
+            
+            if error > initial_error:
+                print("Good lebel",i)
                 continue
             else:
-                if abs(e_error)<2.0:
-                    continue
+                if error<0.2:
+                    initial_error=error
                 print("deleting label: ", i)
-                ret=new_ret
-                idx1=new_idx1
-                idx2=new_idx2
+                initial_error=error
+                ret=new_ret.copy()
+                idx1=new_idx1.copy()
+                idx2=new_idx2.copy()
                 # initial_error=error
             # else:
             #     print("deleting label outer: ", i)
@@ -264,7 +319,7 @@ def match_by_segmentation(f1,f2):
             
 
     print(error_list)
-    return idx1,idx2,pose,idx1_t,idx2_t
+    return idx1,idx2,pose
         # f1_label=f1.
 
 
@@ -290,7 +345,7 @@ def match_by_segmentation_mod(f1,f2):
 
 
     
-    n_label=np.unique(f2.label)
+    n_label=np.unique(f1.label)
     
     bf=cv2.BFMatcher(cv2.NORM_HAMMING)
     matches=bf.knnMatch(f1.des,f2.des,k=2)
@@ -316,15 +371,50 @@ def match_by_segmentation_mod(f1,f2):
     idx1=np.array(idx1)
     idx2=np.array(idx2)
     
-    ransac=RANSAC(ret,Transformation(),10,0.01,500)
+    ransac=RANSAC(ret,Transformation(),8,0.05,100)
     model,inliers,error=ransac.solve()
     ret=ret[inliers]
     idx1=idx1[inliers]
     idx2=idx2[inliers]
 
-    pose=extractRt(model)
+    Pose=extractRt(model)
+    Pose=np.linalg.inv(Pose)
+
+    point_p,pt_proj_c=frames_triangulation(f1, f2.kps, idx1, idx2, Pose)
+    diff=ret[:,1,:]-point_p[:3,:].T
+
+    errors=np.sqrt(np.sum(diff*diff, axis=1))
     
+    mean = np.mean(errors)
+
+    std = np.std(errors)
+
+    # Calculate lower and upper bounds for 3 sigma
+    lower_bound = mean - 6 * std
+    upper_bound = mean + 6 * std
+
+    mask=(errors >= lower_bound) & (errors <= upper_bound)
+
+    idx1=idx1[mask]  
+    idx2=idx2[mask]
+    pt_proj_c=pt_proj_c[mask]
+    # print(errors[~mask])
+
     
+
+
+
+
+
+    diff=diff[mask]
+    initial_error=np.sqrt(np.mean(np.sum(diff*diff, axis=1),axis=0))
+    print(initial_error)
+    
+    # Pose2=PoseOptimization(f1,f2,idx1,idx2,Pose)
+    
+    # print(np.dot(Pose,np.linalg.inv(Pose2)))
+
+    # print(Pose[:3,3])
     
 
 
@@ -333,7 +423,7 @@ def match_by_segmentation_mod(f1,f2):
     
     
     
-    point_p,pt_proj_c=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
+    
     
     
     # good_pts4d=point_p[3,:]>0 & (np.abs(point_p[2,:])>0.005)
@@ -357,7 +447,7 @@ def match_by_segmentation_mod(f1,f2):
 
 
 
-    return idx1,idx2,pose,pt_proj_c
+    return idx1,idx2,Pose,pt_proj_c
         # f1_label=f1.
 
 

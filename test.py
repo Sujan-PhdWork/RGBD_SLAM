@@ -80,7 +80,7 @@ def process_img(img,depth):
 if __name__ == "__main__":
     dataset_path='../dataset/rgbd_dataset_freiburg3_walking_xyz_validation/'
     # dataset_path='../dataset/rgbd_dataset_freiburg3_walking_static/'
-    # dataset_path='../dataset/rgbd_dataset_freiburg1_xyz/'
+    # dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)
 

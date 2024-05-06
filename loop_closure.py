@@ -71,7 +71,7 @@ class LoopThread(Thread):
 
             if (N1/N)>=th:
                 # print(f1.id,'::',k.frame.id)
-                _,_,pose=match(f1,k.frame)
+                _,_,pose=match_by_segmentation(f1,k.frame)
                 # pose=GICP(f,f1)
                 with self.lock:
                     EDGE(self.mapp,k.frame.id,f1.id,pose,3)
