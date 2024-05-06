@@ -60,12 +60,11 @@ def to_3D(depth,K):
 
 def extract(img,depth,label_img):
     
-    orb=cv2.ORB_create(nfeatures=3000,scaleFactor=2,nlevels=8,patchSize=21,edgeThreshold=21)
-    
+    orb=cv2.ORB_create(nfeatures=7000,scaleFactor=2,nlevels=8,patchSize=21,edgeThreshold=21)
     kps= orb.detect(img, None)
     
     # feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
-    # feats=cv2.goodFeaturesToTrack(img.astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
+    # feats=cv2.goodFeaturesToTrack(img.astype(np.uint8),7000,qualityLevel=0.01,minDistance=3)
 
     # print(feats)
     # kps=[cv2.KeyPoint(x=f[0][0],y=f[0][1],size=20) for f in feats]
@@ -324,27 +323,37 @@ def match_by_segmentation_mod(f1,f2):
     idx2=idx2[inliers]
 
     pose=extractRt(model)
+    
+    
+    
+
+
+
+    
+    
+    
+    
     point_p,pt_proj_c=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
     
     
-    good_pts4d=point_p[3,:]>0 & (np.abs(point_p[2,:])>0.005)
+    # good_pts4d=point_p[3,:]>0 & (np.abs(point_p[2,:])>0.005)
 
 
-    point_p=point_p[:,good_pts4d]
-    ret=ret[good_pts4d]
-    idx1=idx1[good_pts4d]
-    idx2=idx2[good_pts4d]
-    pt_proj_c=pt_proj_c[good_pts4d]
+    # point_p=point_p[:,good_pts4d]
+    # ret=ret[good_pts4d]
+    # idx1=idx1[good_pts4d]
+    # idx2=idx2[good_pts4d]
+    # pt_proj_c=pt_proj_c[good_pts4d]
     
-    mask=f2.label!=0
-    mask=mask.reshape(-1,1)
+    # mask=f2.label!=0
+    # mask=mask.reshape(-1,1)
             
-    mask=mask[idx2]
-    ret=ret[~mask[:,0]]
-    idx1=idx1[~mask[:,0]]
-    idx2=idx2[~mask[:,0]]
+    # mask=mask[idx2]
+    # ret=ret[~mask[:,0]]
+    # idx1=idx1[~mask[:,0]]
+    # idx2=idx2[~mask[:,0]]
 
-    pt_proj_c=pt_proj_c[~mask[:,0]]
+    # pt_proj_c=pt_proj_c[~mask[:,0]]
 
 
 
