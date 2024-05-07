@@ -26,7 +26,7 @@ def segmentation(frame: np.ndarray, prob=0.95,viz=True):
     t=time.time()
     predictions=predictor(frame)
     eps=time.time()-t
-    print("Prediction time: ",eps)
+    # print("Prediction time: ",eps)
 
 
     instances=predictions["instances"].to("cpu")

@@ -61,7 +61,7 @@ def to_3D(depth,K):
 
 def extract(img,depth,label_img):
     
-    orb=cv2.ORB_create(nfeatures=7000,scaleFactor=2,nlevels=8,patchSize=21,edgeThreshold=21)
+    orb=cv2.ORB_create(nfeatures=10000,scaleFactor=1.5,nlevels=8,patchSize=21,edgeThreshold=21)
     kps= orb.detect(img, None)
     
     # feats=cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8),3000,qualityLevel=0.01,minDistance=3)
@@ -115,14 +115,18 @@ def triangulate(pose1,pose2,pts1,pts2):
      return ret.T
 
 
-def frames_triangulation(f1, kps, idx1, idx2, pose):
+def frames_triangulation(f1, f2, idx1, idx2, pose):
     
     
-    kps1 = f1.kps[idx1]
-    kps2 = kps[idx2]
+    kps1 = f1.kps[idx1].copy()
+    kps2 = f2.kps[idx2].copy()
 
-    kps1 /= kps1[:, 2].reshape(-1, 1)
-    kps2 /= kps2[:, 2].reshape(-1, 1)
+    # print(kps1,kps2)
+    
+    kps1 /= kps1[:, 2].reshape(-1, 1)+1e-06
+    kps2 /= kps2[:, 2].reshape(-1, 1)+1e-06
+    
+   
 
     kps1 = kps1[:, :2]
     kps2 = kps2[:, :2]
@@ -200,7 +204,7 @@ def match_by_segmentation(f1,f2):
 
     pose=extractRt(model)
     # pose=np.linalg.inv(pose)
-    point_p,_=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
+    point_p,_=frames_triangulation(f1, f2, idx1, idx2, pose)
 
     error_list=[]
 
@@ -226,7 +230,7 @@ def match_by_segmentation(f1,f2):
     
 
     error_list.append(initial_error)
-    print(initial_error)
+    # print(initial_error)
 
     if initial_error<2.0:
         return idx1,idx2,pose
@@ -246,14 +250,14 @@ def match_by_segmentation(f1,f2):
         for i in range(len(n_label)):
             if i==0:
                 continue
-            masks=f1.label==i
+            masks=f1.label!=i
             masks=masks.reshape(-1,1)
             
             masks=masks[idx1]
-            new_ret=ret[~masks[:,0]]
+            new_ret=ret[masks[:,0]]
             # print(new_ret)
-            new_idx1=idx1[~masks[:,0]]
-            new_idx2=idx2[~masks[:,0]]
+            new_idx1=idx1[masks[:,0]]
+            new_idx2=idx2[masks[:,0]]
             ransac=RANSAC(new_ret,Transformation(),8,0.01,100)
             model,inliers,error=ransac.solve()
                 
@@ -264,7 +268,7 @@ def match_by_segmentation(f1,f2):
 
             pose=extractRt(model)
             # pose=np.linalg.inv(pose)
-            point_p,_=frames_triangulation(f1, f2.kps, new_idx1, new_idx2, pose)
+            point_p,_=frames_triangulation(f1, f2, new_idx1, new_idx2, pose)
 
             diff=new_ret[:,1,:]-point_p[:3,:].T
             # errors=np.sqrt(np.sum(diff*diff, axis=1))
@@ -312,7 +316,7 @@ def match_by_segmentation(f1,f2):
             
             
 
-    print(error_list)
+    # print(error_list)
     return idx1,idx2,pose
         # f1_label=f1.
 
@@ -492,6 +496,7 @@ def match(f1,f2):
 
     pose=extractRt(model)
 
+    # pose=np.linalg.inv(pose)
     return idx1,idx2,pose
 
 
@@ -519,7 +524,8 @@ class Frame(object):
         label_img,self.colored_segmented_img,self.background=segmentation(img,viz=True)
         
         self.pts,self.des,self.label=extract(img,depth,label_img)
-
+        # print(self.des.shape,self.label.shape)
+        self.mod_des=self.des[self.label.flatten()==0]
 
 
 

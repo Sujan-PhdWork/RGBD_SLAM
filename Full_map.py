@@ -47,8 +47,8 @@ class FullMAP(Thread):
                 pose=edge.pose
                 Eg= g2o.EdgeSE3()
                 # print("In Full_map:",f1.id,f2.id)
-                Eg.set_vertex(0,self.opt.vertex(f1.id))
-                Eg.set_vertex(1,self.opt.vertex(f2.id))
+                Eg.set_vertex(0,self.opt.vertex(f2.id))
+                Eg.set_vertex(1,self.opt.vertex(f1.id))
                 scam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
                 Eg.set_measurement(scam)
                 Eg.set_information(noise*np.eye(6))

@@ -1,5 +1,5 @@
 import numpy as np
-from frame import match
+from frame import match,match_by_segmentation
 import random
 from threading import Thread,Lock,Event
 from pointmap import EDGE
@@ -50,7 +50,7 @@ class LoopThread(Thread):
             
             
             brute_force = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
-            matches1 = brute_force.match(k.frame.des,f1.des)
+            matches1 = brute_force.match(k.frame.mod_des,f1.mod_des)
             
             #number of matched features
             

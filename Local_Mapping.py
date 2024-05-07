@@ -1,4 +1,4 @@
-from frame import match
+from frame import match,match_by_segmentation
 from threading import Thread,Lock,Event
 # from pointmap import Map
 import numpy as np
@@ -74,12 +74,12 @@ class LocalMAP(Thread):
             
             f1,f2=self.Current_Keyframe.frames[i],self.Current_Keyframe.frames[i+1]
             # print(self.Current_Keyframe.id,f1.id,f2.id)
-            _,_,pose=match(f2,f1)
+            _,_,pose=match_by_segmentation(f2,f1)
             # pose=GICP(self.Current_Keyframe.frames[i],self.Current_Keyframe.frames[i+1])
             # pose=edge.pose
             Eg= g2o.EdgeSE3()
-            Eg.set_vertex(0,self.opt.vertex(f1.id))
-            Eg.set_vertex(1,self.opt.vertex(f2.id))
+            Eg.set_vertex(0,self.opt.vertex(f2.id))
+            Eg.set_vertex(1,self.opt.vertex(f1.id))
             scam=g2o.Isometry3d(pose[:3,:3], pose[:3,3])
             Eg.set_measurement(scam)
             Eg.set_information(5*np.eye(6))
@@ -173,5 +173,6 @@ class LocalMap_Thread(object):
             lock=Lock()
             self.lm=LocalMAP(mapp,lock)
             self.lm.start()
+            
 
    
