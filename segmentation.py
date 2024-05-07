@@ -36,14 +36,11 @@ def segmentation(frame: np.ndarray, prob=0.95,viz=True):
     detected_scores= instances.scores
 
     mask_image=instances.pred_masks.numpy()
-    # mask_image=mask_image.astype(np.uint8)
-    # kernel = np.ones((3, 3), np.uint8) 
-    # for i in range(mask_image.shape[0]):
-    #     mask_image[i]=cv2.dilate(mask_image[i], kernel, iterations=1) 
+    
 
-    # mask_image=mask_image==1
-    # # cv2.imshow("ji",mask_image[0]*255)
-
+    total_mask=np.zeros(mask_image[0].shape,dtype=np.uint8)
+    # background = np.full(frame.shape, 255, dtype=np.uint8)
+    # bk = cv2.bitwise_or(background, background, mask=total_mask)
 
     lable_image=np.zeros([h,w],dtype=np.int8)
     
@@ -51,13 +48,14 @@ def segmentation(frame: np.ndarray, prob=0.95,viz=True):
     for i in range(mask_image.shape[0]):
         if detected_scores[i]>prob:
             lable_image[mask_image[i]]=i+1
-
-    
+            total_mask=total_mask+mask_image[i]
+    total_mask_bk=np.invert(total_mask*255)
+    background=cv2.bitwise_or(frame, frame, mask=total_mask_bk)
     
     if viz:
         segment_colors = np.random.randint(0, 256, (len(detected_class_indexes)+1, 3), dtype=np.uint8)
         colored_segmented_data = segment_colors[lable_image.flatten()]
         colored_segmented_img = colored_segmented_data.reshape(h,w, 3)
-        return lable_image,colored_segmented_img
+        return lable_image,colored_segmented_img,background
     else:
-        return lable_image
+        return lable_image,background

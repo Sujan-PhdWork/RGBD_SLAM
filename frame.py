@@ -183,13 +183,13 @@ def match_by_segmentation(f1,f2):
                 kp2=f2.kps[m.trainIdx]
 
                 # kp1[idx]-> the keypoint in previous frame with id =idx            
-                ret.append((kp1,kp2))
+                ret.append((kp2,kp1))
     
     ret=np.array(ret).astype(np.float32)
     idx1=np.array(idx1)
     idx2=np.array(idx2)
     
-    ransac=RANSAC(ret,Transformation(),8,0.05,500)
+    ransac=RANSAC(ret,Transformation(),8,0.01,100)
     model,inliers,error=ransac.solve()
     ret=ret[inliers]
     idx1=idx1[inliers]
@@ -199,7 +199,7 @@ def match_by_segmentation(f1,f2):
     idx2_t=idx2.copy()
 
     pose=extractRt(model)
-    pose=np.linalg.inv(pose)
+    # pose=np.linalg.inv(pose)
     point_p,_=frames_triangulation(f1, f2.kps, idx1, idx2, pose)
 
     error_list=[]
@@ -242,13 +242,7 @@ def match_by_segmentation(f1,f2):
         # model,inliers,error=ransac.solve()
         # ret=ret[inliers]
         # idx1=idx1[inliers]
-        # idx2=idx2[inliers]
-
-        # pose=extractRt(model)
-        # pose=np.linalg.inv(pose)
-        # point_p,_=frames_triangulation(f1, f2.kps, new_idx1, new_idx2, pose_new)
-
-    
+        # idx2=idx2[in=
         for i in range(len(n_label)):
             if i==0:
                 continue
@@ -269,7 +263,7 @@ def match_by_segmentation(f1,f2):
 
 
             pose=extractRt(model)
-            pose=np.linalg.inv(pose)
+            # pose=np.linalg.inv(pose)
             point_p,_=frames_triangulation(f1, f2.kps, new_idx1, new_idx2, pose)
 
             diff=new_ret[:,1,:]-point_p[:3,:].T
@@ -365,7 +359,7 @@ def match_by_segmentation_mod(f1,f2):
                 kp2=f2.kps[m.trainIdx]
 
                 # kp1[idx]-> the keypoint in previous frame with id =idx            
-                ret.append((kp1,kp2))
+                ret.append((kp2,kp1))
     
     ret=np.array(ret).astype(np.float32)
     idx1=np.array(idx1)
@@ -378,7 +372,7 @@ def match_by_segmentation_mod(f1,f2):
     idx2=idx2[inliers]
 
     Pose=extractRt(model)
-    Pose=np.linalg.inv(Pose)
+    # Pose=np.linalg.inv(Pose)
 
     point_p,pt_proj_c=frames_triangulation(f1, f2.kps, idx1, idx2, Pose)
     diff=ret[:,1,:]-point_p[:3,:].T
@@ -478,7 +472,7 @@ def match(f1,f2):
                 kp2=f2.kps[m.trainIdx]
 
                 # kp1[idx]-> the keypoint in previous frame with id =idx            
-                ret.append((kp1,kp2))
+                ret.append((kp2,kp1))
 
     assert len(ret)>=3
     ret=np.array(ret).astype(np.float32)
@@ -490,7 +484,7 @@ def match(f1,f2):
     # ret[:,0,:2]=normalize(ret[:,0,:2],f1.Kinv)
     # ret[:,1,:2]=normalize(ret[:,1,:2],f2.Kinv)
     
-    ransac=RANSAC(ret,Transformation(),3,0.05,100)
+    ransac=RANSAC(ret,Transformation(),8,0.01,100)
     model,inliers,error=ransac.solve()
     # print(error)
     idx1=idx1[inliers]
@@ -522,11 +516,13 @@ class Frame(object):
 
         
 
-        label_img,self.colored_segmented_img=segmentation(img,viz=True)
+        label_img,self.colored_segmented_img,self.background=segmentation(img,viz=True)
         
         self.pts,self.des,self.label=extract(img,depth,label_img)
 
-    
+
+
+
         # center = np.uint8(center)
         # print(label.shape, depth_Z.shape,depth.shape)
         # res = center[label.flatten()]
