@@ -93,7 +93,7 @@ def process_img(img,depth):
         # Adding first frameas key frame 
         # mapp.keyframe=
         # GICP_T.gc.event.set()
-        # Loop.lc.event.set()
+        Loop.lc.event.set()
         frame.pose=Int_pose
         # frame.Rpose=Int_pose
         frame.isKey=True
@@ -190,7 +190,7 @@ def optimize_frame(mapp):
 
 if __name__ == "__main__":
     
-    dataset_path='../dataset/rgbd_dataset_freiburg1_floor/'
+    dataset_path='../../dataset/rgbd_dataset_freiburg1_xyz/'
 
     depth_paths=dataset_path+'depth.txt'
     dlist=data(depth_paths)

@@ -97,7 +97,7 @@ class LoopThread(Thread):
                             # local_mapping(self.submap)
                             # self.event.clear()
                             # self.event.clear()    
-                            sleep(1)
+                            sleep(2)
                         else:
                             del tkeys
                             sleep(1)
