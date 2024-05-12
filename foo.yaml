@@ -1,0 +1,4 @@
+name: foo_env
+channels:
+  - defaults
+prefix: /home/sujan/anaconda3/envs/foo_env

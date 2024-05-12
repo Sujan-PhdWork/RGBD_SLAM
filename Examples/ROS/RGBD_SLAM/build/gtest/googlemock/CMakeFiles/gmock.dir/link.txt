@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC   -shared -Wl,-soname,libgmock.so -o ../lib/libgmock.so CMakeFiles/gmock.dir/src/gmock-all.cc.o  -Wl,-rpath,/media/sujan/Work/One_Folder/Visual_SLAM/RGBD_SLAM/Implementation/Examples/ROS/RGBD_SLAM/build/gtest/lib ../lib/libgtest.so -lpthread 

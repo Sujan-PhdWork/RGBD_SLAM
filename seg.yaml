@@ -1,0 +1,4 @@
+name: segmentaion_env
+channels:
+  - defaults
+prefix: /home/sujan/anaconda3/envs/segmentaion_env
